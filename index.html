@@ -1,0 +1,1130 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SIGAP Kedisan Buahan | Geospasial, Agraria, dan Pariwisata</title>
+<meta name="description" content="Sistem Informasi Geospasial, Agraria, dan Pariwisata Desa Kedisan dan Desa Buahan, Kecamatan Kintamani, Kabupaten Bangli, Bali.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Marcellus&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+/* Konsep: portal data desa. Pita instansi di atas, peta lebar penuh sebagai inti, bagian data bertumpuk di bawahnya. */
+:root{
+  --bg:#F5F6F8; --surface:#FFFFFF; --surface-2:#EBEEF3; --ink:#1A2433; --muted:#556072; --line:#D5DBE4;
+  --primary:#1F3A5F; --primary-ink:#FFFFFF; --accent:#8F6A22; --brick:#B24A35; --good:#1E7A46; --warn:#9A5B00; --bad:#B3261E;
+  --kedisan:#0E7C9B; --buahan:#B4690E;
+  --font-display:'Marcellus','Times New Roman',serif; --font-body:'Hanken Grotesk',system-ui,-apple-system,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--font-body);-webkit-text-size-adjust:100%}
+h1,h2,h3{font-family:var(--font-display);line-height:1.15;margin:0;text-wrap:balance}
+a{color:var(--primary)}
+a:hover{text-decoration:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.num{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* pita instansi */
+.strip{background:var(--primary);color:var(--primary-ink);font-size:13px}
+.strip .wrap{display:flex;flex-wrap:wrap;gap:4px 18px;padding-block:7px;align-items:center;justify-content:space-between}
+/* header */
+header.top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:1200}
+header.top .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 24px;padding-block:12px}
+.brand{display:flex;gap:12px;align-items:center;text-decoration:none;color:var(--ink)}
+.emblem{width:42px;height:42px;border-radius:10px;background:var(--primary);display:grid;place-items:center;flex:none}
+.brand b{font:700 21px/1 var(--font-display);letter-spacing:.04em;display:block}
+.brand span{font-size:12px;color:var(--muted);display:block;margin-top:3px}
+nav.main{display:flex;flex-wrap:wrap;gap:2px 6px}
+nav.main a{color:var(--ink);text-decoration:none;font-weight:500;font-size:14.5px;padding:10px 12px;border-radius:8px;min-height:44px;display:inline-flex;align-items:center}
+nav.main a:hover{background:var(--surface-2)}
+
+/* hero */
+.hero{padding-block:36px 22px}
+.eyebrow{font:600 12.5px/1 var(--font-body);letter-spacing:.09em;text-transform:uppercase;color:var(--primary)}
+.hero h1{font-size:clamp(28px,4.4vw,46px);margin:10px 0 12px;max-width:20ch}
+.hero p.lead{margin:0;max-width:68ch;color:var(--muted);font-size:17px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:24px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.fact b{display:block;font:600 26px/1.1 var(--font-display)}
+.fact span{font-size:13px;color:var(--muted)}
+
+/* section */
+section.blok{padding-block:46px;scroll-margin-top:70px}
+section.blok.alt{background:var(--surface);border-block:1px solid var(--line)}
+.sec-head{max-width:70ch;margin-bottom:24px}
+.sec-head h2{font-size:clamp(24px,3vw,32px);margin-top:8px}
+.sec-head p{margin:8px 0 0;color:var(--muted)}
+
+/* peta */
+.gis{display:grid;grid-template-columns:270px minmax(0,1fr) 320px;gap:14px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+.panel h3{font-size:15px;margin-bottom:10px}
+.mapbox{position:relative;min-width:0}
+#map{height:min(72vh,680px);min-height:440px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);z-index:1}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field label{font-size:13px;font-weight:600}
+input[type=search],input[type=text],select{width:100%;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;font-size:15px}
+.layer{display:flex;align-items:center;gap:10px;min-height:44px;padding:4px 8px;border-radius:8px;cursor:pointer}
+.layer:hover{background:var(--surface-2)}
+.layer input{width:20px;height:20px;accent-color:var(--primary);flex:none}
+.layer svg{flex:none}
+.layer .n{margin-left:auto;font-size:12.5px;color:var(--muted)}
+.results{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:2px}
+.results button{width:100%;text-align:left;border:0;background:transparent;color:var(--ink);font:inherit;font-size:14px;padding:9px 8px;border-radius:8px;cursor:pointer;min-height:44px}
+.results button:hover{background:var(--surface-2)}
+.results small{display:block;color:var(--muted);font-size:12px}
+.detail h3{font-size:19px;margin:8px 0 6px}
+.detail p{margin:0 0 10px;font-size:14.5px;color:var(--muted)}
+dl.kv{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px;border-top:1px solid var(--line);padding-top:10px}
+dl.kv dt{color:var(--muted)}
+dl.kv dd{margin:0;text-align:right;overflow-wrap:anywhere}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink)}
+.chip.good{color:var(--good);border-color:currentColor;background:transparent}
+.chip.warn{color:var(--warn);border-color:currentColor;background:transparent}
+.chip.bad{color:var(--bad);border-color:currentColor;background:transparent}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--primary);background:var(--primary);color:var(--primary-ink);font:600 14.5px var(--font-body);text-decoration:none;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--primary)}
+.btn:hover{filter:brightness(1.08)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.note{font-size:13px;color:var(--muted);margin:10px 0 0}
+.leaflet-container{font-family:var(--font-body)}
+.leaflet-tooltip{font:500 13px var(--font-body)}
+.pinwrap{filter:drop-shadow(0 1px 2px rgba(0,0,0,.55))}
+.desa-label{background:rgba(255,255,255,.92);border:0;box-shadow:0 1px 4px rgba(0,0,0,.35);color:#13232D;font:700 13px var(--font-display);letter-spacing:.03em;padding:3px 9px}
+.desa-label::before{display:none}
+
+/* kartu umum */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;min-width:0}
+.alt .card{background:var(--bg)}
+.card h3{font-size:18px;margin-bottom:8px}
+.card p{margin:0 0 8px;font-size:14.5px;color:var(--muted)}
+.wx-top{display:flex;align-items:center;gap:12px}
+.wx-top img{width:56px;height:56px}
+.wx-temp{font:600 34px/1 var(--font-display)}
+.wx-days{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.wx-day{border:1px solid var(--line);border-radius:8px;padding:8px;font-size:13px}
+.wx-day b{display:block;font-size:13px}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.list li{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;padding:11px 0;border-top:1px solid var(--line);font-size:14.5px}
+.list li:first-child{border-top:0}
+.list li small{display:block;color:var(--muted);font-size:12.5px}
+.list .r{text-align:right;flex:none}
+
+/* tabel */
+.tools{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:end}
+.tools .field{margin:0;flex:1 1 200px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 14px var(--font-body);cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:14px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--surface-2);position:sticky;top:0}
+tr:last-child td{border-bottom:0}
+td small{display:block;color:var(--muted)}
+.linkbtn{background:none;border:0;padding:0;color:var(--primary);font:inherit;text-decoration:underline;cursor:pointer;text-align:left}
+
+/* identitas */
+.ident dl{margin:12px 0 0;display:grid;grid-template-columns:auto 1fr;gap:7px 14px;font-size:14.5px}
+.ident dt{color:var(--muted)}
+.ident dd{margin:0;overflow-wrap:anywhere}
+
+/* sumber */
+.src li{margin-bottom:6px}
+footer{background:#0B1A22;color:#DCE7EC;padding-block:30px;font-size:14px}
+footer a{color:#9ED8EC}
+footer .wrap{display:flex;flex-wrap:wrap;gap:14px 40px;justify-content:space-between}
+footer p{margin:0 0 6px;max-width:60ch}
+
+@media (max-width:1100px){.gis{grid-template-columns:240px minmax(0,1fr)}.gis .detail{grid-column:1/-1}}
+@media (max-width:760px){.gis{grid-template-columns:minmax(0,1fr)}#map{height:62vh}header.top{position:static}.wx-days{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+.pin{display:inline-flex;align-items:center;justify-content:center;border-radius:50% 50% 50% 8%;transform:rotate(-45deg);border:2.5px solid #fff;box-shadow:0 2px 6px #0006;line-height:1}
+.layer .pin i,.chip .pin i{transform:none!important}.chip .pin{transform:none;border-radius:50%}
+.pinwrap .pin{font-variant-emoji:emoji}
+.layer .pin{transform:none;border-radius:50%}
+html,body{height:100%;overflow:hidden}
+body{display:flex;flex-direction:column;background:var(--bg)}
+.strip{flex:none}header.top{flex:none;position:static}
+main#atas{flex:1;min-height:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;overscroll-behavior-x:contain}
+.page{flex:0 0 100%;width:100%;height:100%;overflow-y:auto;scroll-snap-align:start;scroll-snap-stop:always;background-image:radial-gradient(circle at 8% 0%,rgba(14,124,155,.16),transparent 42%),radial-gradient(circle at 95% 100%,rgba(194,106,0,.14),transparent 42%);}
+.pbanner{position:relative;height:150px;background-size:cover;background-position:center;display:flex;align-items:flex-end;color:#fff}
+.pbanner::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#0000 20%,#000a)}
+.pbanner h2{position:relative;z-index:1;margin:0;padding:14px 20px;font-family:var(--font-display);font-size:28px;text-shadow:0 2px 8px #000a}
+#tabs{flex:none;display:flex;align-items:center;gap:4px;padding:6px 8px;background:var(--surface);border-top:1px solid var(--line);overflow-x:auto}
+#tabs button{flex:1 0 auto;border:0;background:none;color:var(--muted);font:600 12px var(--font-body);padding:6px 10px;border-radius:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;white-space:nowrap}
+#tabs button b{font-size:18px}#tabs button.on{background:var(--primary);color:var(--primary-ink)}
+.arrow{position:fixed;top:50%;z-index:900;width:40px;height:40px;border-radius:50%;border:0;background:#000a;color:#fff;font-size:20px;cursor:pointer}
+#prev{left:6px}#next{right:6px}
+.cover{position:relative;min-height:min(86vh,720px);color:#fff;display:flex;align-items:flex-end;overflow:hidden}
+.cover .bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.8s;animation:kb 20s ease-in-out infinite alternate}
+.cover .bg.on{opacity:1}@keyframes kb{from{transform:scale(1)}to{transform:scale(1.12) translate(-1.5%,-1%)}}
+.cover::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#0003,#000b 85%)}
+.cover .in{position:relative;z-index:1;padding:28px 22px;max-width:900px}
+.cover h1{font-family:var(--font-display);font-size:clamp(30px,6vw,56px);margin:6px 0;line-height:1.05;text-shadow:0 3px 14px #000a}
+.cover p{max-width:640px;font-size:16px;text-shadow:0 1px 8px #000a}
+.cbtn{display:inline-flex;gap:6px;align-items:center;border:1.5px solid #fff9;background:#0006;color:#fff;border-radius:99px;padding:9px 16px;font:600 14px var(--font-body);cursor:pointer;margin:4px 6px 0 0;text-decoration:none;backdrop-filter:blur(4px)}
+.cbtn.pri{background:var(--accent);border-color:var(--accent)}
+.gal{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:16px 20px}
+.gal figure{flex:0 0 min(78vw,360px);margin:0;scroll-snap-align:center;border-radius:14px;overflow:hidden;background:var(--surface);box-shadow:0 4px 14px #0003}
+.gal img{width:100%;height:210px;object-fit:cover;display:block}.gal figcaption{padding:8px 12px;font-size:12.5px;color:var(--muted)}
+.vid{margin:0 20px 18px;padding:14px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.vid iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:10px}
+@media(max-width:760px){.strip{display:none}.arrow{display:none}}
+
+/* ===== Tema Bali v4 ===== */
+body{background:radial-gradient(1100px 600px at 90% -8%,rgba(82,184,170,.13),transparent 60%),radial-gradient(900px 520px at -6% 100%,rgba(185,85,59,.13),transparent 60%),var(--bg)}
+.page{background-image:radial-gradient(900px 500px at 92% 0%,rgba(82,184,170,.11),transparent 60%),radial-gradient(800px 500px at 0% 100%,rgba(185,85,59,.12),transparent 60%)}
+h1,h2,h3{font-weight:400;letter-spacing:.005em}
+.strip{background:#08100D;color:var(--accent);border-bottom:1px solid var(--line)}
+header.top{background:rgba(13,23,20,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.emblem{background:#08100D;border:1px solid var(--accent)}
+.brand b{font-family:var(--font-display);font-weight:400;font-size:24px;letter-spacing:.14em}
+nav.main a:hover{background:var(--surface-2);color:var(--accent)}
+.eyebrow{text-transform:none;letter-spacing:.02em;font:600 14px var(--font-body);color:var(--accent)}
+th{text-transform:none;letter-spacing:0;font-size:13px}
+.sec-head h2::after,.hero h1::after{content:"";display:block;width:132px;height:10px;margin-top:16px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='10'%3E%3Cpath d='M12 1l5 4-5 4-5-4z' fill='none' stroke='%23D9A23C' stroke-width='1'/%3E%3Cpath d='M0 5h5M19 5h5' stroke='%23D9A23C' stroke-width='1'/%3E%3C/svg%3E") repeat-x}
+.card,.panel,.fact,.tablewrap{background:var(--surface);border-color:var(--line);border-radius:6px}
+.alt .card{background:var(--surface-2)}
+section.blok.alt{background:rgba(20,35,31,.72)}
+.btn{background:var(--accent);border-color:var(--accent);color:#1B1305;border-radius:4px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.chips button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#1B1305}
+a{color:var(--accent)}
+.gl{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pin{color:#fff}.pin i{width:100%;height:100%;display:flex;align-items:center;justify-content:center}.pin svg{width:58%;height:58%}
+.layer .pin i{transform:none!important}
+.cover{min-height:min(88vh,760px)}
+.cover::after{background:linear-gradient(180deg,#07110e44 0%,#07110eb0 62%,#0D1714 100%)}
+.cover h1{font-weight:400;font-size:clamp(34px,6.6vw,68px);max-width:15ch;line-height:1.04}
+.cbtn{border-radius:4px;border:1px solid #F2EBDB88;background:#07110e88}
+.cbtn.pri{background:var(--accent);border-color:var(--accent);color:#1B1305}
+.gal figure{border-radius:6px;border:1px solid var(--line)}
+.hero{padding-block:46px 14px}.hero h1{max-width:18ch}
+.pbanner{height:210px}.pbanner::after{background:linear-gradient(180deg,#07110e22 0%,var(--bg) 100%)}
+.pbanner h2{font-size:clamp(28px,4vw,40px);text-shadow:none;display:flex;align-items:center}
+.pbanner h2 svg{width:28px;height:28px;margin-right:12px;color:var(--accent)}
+#tabs{background:#08100D;border-top:1px solid var(--line)}
+#tabs button{border-radius:4px;font-size:12.5px}
+#tabs button svg{width:20px;height:20px}
+#tabs button.on{background:transparent;color:var(--accent);box-shadow:inset 0 2px 0 var(--accent)}
+.arrow{background:#08100Dcc;border:1px solid var(--line)}
+footer{background:#08100D;border-top:1px solid var(--line)}
+footer::before{content:"";display:block;height:10px;margin:-14px 0 22px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='10'%3E%3Cpath d='M12 1l5 4-5 4-5-4z' fill='none' stroke='%23D9A23C' stroke-width='1'/%3E%3Cpath d='M0 5h5M19 5h5' stroke='%23D9A23C' stroke-width='1'/%3E%3C/svg%3E") repeat-x center}
+/* pembeda */
+.vs{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr);gap:16px}
+.vs-col{border:1px solid var(--line);border-radius:6px;padding:22px;background:var(--surface)}
+.vs-col.main{border-color:var(--accent);background:linear-gradient(180deg,rgba(217,162,60,.08),transparent 60%),var(--surface)}
+.vs-col.dim{opacity:.92}.vs-col h3{font-size:22px;margin-bottom:10px}.vs-col p{margin:0 0 8px;color:var(--muted)}
+.themes{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px}
+.themes li{display:flex;gap:12px}.themes b{display:block;font-size:16px;margin-bottom:2px}.themes span{color:var(--muted);font-size:14px;display:block}
+.ti{flex:none;width:40px;height:40px;border:1px solid var(--accent);border-radius:50%;display:grid!important;place-items:center;color:var(--accent)}.ti svg{width:20px;height:20px}
+/* storymap */
+.sm{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:start;margin-top:18px}
+.sm-map-wrap{position:sticky;top:12px;z-index:2}
+.sm-map{height:min(76vh,700px);border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--surface-2)}
+.sm-leg{position:absolute;left:10px;bottom:10px;z-index:500;display:flex;flex-wrap:wrap;gap:6px;max-width:90%}
+.sm-leg span{background:#08100Dd9;border:1px solid var(--line);border-radius:4px;padding:4px 9px;font-size:12.5px;display:flex;align-items:center;gap:6px}
+.sm-leg i{width:10px;height:10px;border-radius:50%;display:block}
+.chap{min-height:72vh;display:flex;flex-direction:column;justify-content:center;padding:20px 8px 20px 24px;border-left:2px solid var(--line);opacity:.35;transition:opacity .45s,border-color .45s}
+.chap.on{opacity:1;border-color:var(--accent)}
+.chap .k{color:var(--accent);font-size:13.5px;font-weight:600;margin-bottom:8px}
+.chap h3{font-size:clamp(26px,3.2vw,38px);margin-bottom:12px}
+.chap p{margin:0 0 10px;color:var(--ink);opacity:.86;font-size:17px;max-width:46ch;line-height:1.65}
+@media(max-width:900px){.vs,.themes{grid-template-columns:1fr}.sm{grid-template-columns:1fr}.sm-map-wrap{top:0;z-index:5}.sm-map{height:38vh}.chap{min-height:58vh;padding-left:16px}}
+
+/* ===== v5: latar foto, nuansa danau ===== */
+body{background:var(--bg)}
+.page{background-size:cover;background-position:center;background-attachment:fixed}
+.strip,#tabs,footer{background:#0F3430}
+header.top{background:rgba(15,52,48,.94)}
+.emblem{background:#0F3430}
+.card,.panel,.fact,.tablewrap,.vs-col,.gal figure{background:rgba(17,58,53,.80);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);border-color:rgba(240,184,71,.28)}
+.vs-col.main{background:linear-gradient(180deg,rgba(240,184,71,.14),transparent 60%),rgba(17,58,53,.86)}
+.alt .card{background:rgba(17,58,53,.80)}
+section.blok.alt{background:rgba(10,42,38,.38);border-color:rgba(240,184,71,.2)}
+th{background:rgba(10,42,38,.9)}
+input[type=search],input[type=text],select{background:rgba(10,42,38,.7)}
+.cover::after{background:linear-gradient(180deg,rgba(8,40,36,.15) 0%,rgba(8,40,36,.45) 55%,rgba(18,62,57,.92) 100%)}
+.pbanner::after{background:linear-gradient(180deg,rgba(10,40,36,.05) 0%,rgba(18,62,57,.55) 100%)}
+.btn{color:#1E1402}
+.sm-leg span,.sm-map{background:rgba(10,42,38,.85)}
+.chap{background:linear-gradient(90deg,rgba(10,42,38,.55),transparent)}
+.hero h1,.sec-head h2{text-shadow:0 2px 18px rgba(5,30,27,.55)}
+.vid.vposter{position:relative;margin:0 20px 18px;min-height:260px;padding:0;border:1px solid rgba(240,184,71,.35);border-radius:6px;overflow:hidden;background-size:cover;background-position:center;display:flex;align-items:flex-end}
+.vid.vposter::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,40,36,.1),rgba(8,40,36,.82))}
+.vin{position:relative;padding:22px;max-width:560px}.vin h3{font-size:clamp(24px,3vw,32px);margin-bottom:6px}.vin p{margin:0 0 12px;opacity:.9}
+.vin .btn svg{flex:none}
+
+/* ===== v6: fajar Batur ===== */
+body{background:var(--bg)}
+.strip,#tabs,footer{background:#1F1030}
+header.top{background:rgba(43,26,60,.94)}.emblem{background:#1F1030}
+.card,.panel,.fact,.tablewrap,.vs-col,.gal figure{background:rgba(48,26,66,.80);border-color:rgba(255,180,90,.32)}
+.alt .card{background:rgba(48,26,66,.80)}
+.vs-col.main{background:linear-gradient(180deg,rgba(255,180,90,.16),transparent 60%),rgba(48,26,66,.88)}
+section.blok.alt{background:rgba(31,16,48,.34);border-color:rgba(255,180,90,.2)}
+th{background:rgba(31,16,48,.92)}
+input[type=search],input[type=text],select{background:rgba(31,16,48,.72)}
+.cover::after{background:linear-gradient(180deg,rgba(60,20,80,.10) 0%,rgba(120,40,50,.30) 50%,rgba(43,26,60,.94) 100%)}
+.pbanner::after{background:linear-gradient(180deg,rgba(60,20,80,.05),rgba(43,26,60,.65))}
+.btn{color:#2A1305}.cbtn.pri{color:#2A1305}.chips button[aria-pressed="true"]{color:#2A1305}
+.cbtn{background:rgba(31,16,48,.55)}
+.vid.vposter::before{background:linear-gradient(180deg,rgba(60,20,80,.1),rgba(43,26,60,.85))}
+/* storymap */
+.sm-hero{position:relative;min-height:min(72vh,620px);background-size:cover;background-position:center;display:flex;align-items:flex-end;margin-bottom:28px}
+.sm-hero::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(74,30,86,.25) 0%,rgba(190,80,50,.35) 45%,rgba(43,26,60,.96) 100%)}
+.sm-hero-in{position:relative;padding-block:40px 34px;width:100%}
+.sm-hero h2{font-size:clamp(34px,6vw,64px);max-width:16ch;line-height:1.05;margin:8px 0 12px;text-shadow:0 3px 20px rgba(30,10,40,.6)}
+.sm-hero p{max-width:60ch;font-size:17.5px;margin:0 0 22px}
+.sm-pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,340px));gap:12px}
+.sm-pick button{text-align:left;padding:16px 18px;border-radius:6px;border:1px solid rgba(255,244,226,.45);background:rgba(31,16,48,.62);color:var(--ink);font:inherit;cursor:pointer;backdrop-filter:blur(6px)}
+.sm-pick button b{display:block;font:400 22px var(--font-display)}.sm-pick button span{font-size:13.5px;color:var(--muted)}
+.sm-pick button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#2A1305}.sm-pick button[aria-pressed="true"] span{color:#4A2A10}
+.sm-map{background:#4C2F68}
+.sm-badge{position:absolute;left:10px;top:10px;z-index:500;background:rgba(31,16,48,.88);border:1px solid var(--accent);border-radius:4px;padding:6px 12px;font-size:14px}
+.sm-badge b{color:var(--accent);margin-right:6px}
+.sm-leg span{background:rgba(31,16,48,.88)}
+.chap{min-height:78vh;opacity:.45;border-left:0;background:none;padding:18px 0}
+.chap.on{opacity:1}
+.chap-card{border:1px solid rgba(255,180,90,.3);border-radius:6px;overflow:hidden;background:rgba(48,26,66,.86);backdrop-filter:blur(7px);transition:border-color .4s,transform .4s}
+.chap.on .chap-card{border-color:var(--accent);transform:translateY(-4px)}
+.chap-card img{width:100%;height:190px;object-fit:cover;display:block}
+.chap-t{padding:18px 20px 16px}
+.chap-t .k{color:var(--accent);font-size:13.5px;font-weight:600;margin-bottom:6px}
+.chap-t h3{font-size:clamp(24px,2.8vw,32px);margin-bottom:10px}
+.chap-t p{margin:0 0 10px;font-size:16.5px;line-height:1.65;opacity:.92}
+.cap{display:block;margin-top:10px;font-size:12px;color:var(--muted)}
+@media(max-width:900px){.chap{min-height:62vh}.sm-hero{min-height:56vh}}
+
+/* ===== v7: netral formal, putih dan biru navy ===== */
+body{background:var(--bg);color:var(--ink)}
+.strip{background:#14233B;color:#E8EDF4;border-bottom:0}
+header.top{background:rgba(255,255,255,.96);border-bottom:1px solid var(--line)}
+.emblem{background:#14233B;border:0}
+.brand b{color:#14233B}
+nav.main a:hover{background:var(--surface-2);color:var(--primary)}
+.eyebrow{color:var(--accent)}
+.cover .eyebrow,.sm-hero .eyebrow{color:#F0C877!important}
+h1,h2,h3{text-shadow:none}
+.card,.panel,.fact,.tablewrap,.vs-col,.gal figure,.alt .card{background:rgba(255,255,255,.94);backdrop-filter:none;-webkit-backdrop-filter:none;border:1px solid var(--line);border-radius:6px;box-shadow:0 1px 2px rgba(20,35,59,.05)}
+.vs-col.main{background:#fff;border:1px solid var(--primary);box-shadow:0 0 0 1px var(--primary) inset}
+.vs-col.dim{background:rgba(255,255,255,.88)}
+section.blok.alt{background:rgba(255,255,255,.55);border-color:var(--line)}
+th{background:#EEF1F5;color:var(--muted)}
+input[type=search],input[type=text],select{background:#fff;border-color:#BCC6D3}
+a{color:var(--primary)}
+.btn{background:var(--primary);border-color:var(--primary);color:#fff;border-radius:4px}
+.btn.ghost{background:transparent;color:var(--primary)}
+.chips button{background:#fff;border-color:#BCC6D3;color:var(--ink)}
+.chips button[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:#fff}
+.ti{border-color:var(--accent);color:var(--accent)}
+.sec-head h2::after,.hero h1::after{opacity:.9}
+/* sampul dan banner tetap berfoto, teks putih */
+.cover::after{background:linear-gradient(180deg,rgba(14,28,50,.15) 0%,rgba(14,28,50,.42) 55%,rgba(14,28,50,.88) 100%)}
+.cbtn{background:rgba(14,28,50,.55);border:1px solid rgba(255,255,255,.7);color:#fff}
+.cbtn.pri{background:#E2B456;border-color:#E2B456;color:#1B1405}
+.pbanner::after{background:linear-gradient(180deg,rgba(14,28,50,.18),rgba(14,28,50,.72))}
+.pbanner h2{color:#fff}.pbanner h2 svg{color:#F0C877}
+.vid.vposter{color:#fff;border-color:var(--line)}
+.vid.vposter::before{background:linear-gradient(180deg,rgba(14,28,50,.1),rgba(14,28,50,.8))}
+.vid.vposter .btn{background:#E2B456;border-color:#E2B456;color:#1B1405}
+.gal figure{border-radius:6px}
+/* navigasi */
+#tabs{background:#fff;border-top:1px solid var(--line)}
+#tabs button{color:var(--muted)}
+#tabs button.on{background:transparent;color:var(--primary);box-shadow:inset 0 2px 0 var(--accent)}
+.arrow{background:#fff;color:var(--primary);border:1px solid var(--line);box-shadow:0 1px 4px rgba(20,35,59,.18)}
+footer{background:#14233B;color:#DCE4EE}footer a{color:#F0C877}
+footer::before{opacity:.8}
+/* storymap */
+.sm-hero{color:#fff}
+.sm-hero::before{background:linear-gradient(180deg,rgba(14,28,50,.2) 0%,rgba(14,28,50,.55) 50%,rgba(14,28,50,.92) 100%)}
+.sm-hero p{color:#EDF1F6}
+.sm-pick button{background:rgba(14,28,50,.55);border:1px solid rgba(255,255,255,.6);color:#fff}
+.sm-pick button span{color:#D7DFEA}
+.sm-pick button[aria-pressed="true"]{background:#E2B456;border-color:#E2B456;color:#1B1405}
+.sm-pick button[aria-pressed="true"] span{color:#4A3A10}
+.sm-map{background:#DDE3EA;border-color:var(--line)}
+.sm-badge{background:#fff;border:1px solid var(--primary);color:var(--ink)}.sm-badge b{color:var(--primary)}
+.sm-leg span{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.chap-card{background:#fff;border:1px solid var(--line);box-shadow:0 2px 10px rgba(20,35,59,.08);backdrop-filter:none}
+.chap.on .chap-card{border-color:var(--primary);box-shadow:0 6px 20px rgba(20,35,59,.16)}
+.chap-t .k{color:var(--accent)}.chap-t p{opacity:1;color:#2C3748}
+.cap{color:var(--muted)}
+
+/* ===== v8: gerbang pembuka, transisi halaman ===== */
+#gate{position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;color:#fff;text-align:center;background:#14233B}
+#gate.open{pointer-events:none;background:transparent}
+.gh{position:absolute;top:0;bottom:0;width:50.2%;background-color:#14233B;background-size:200% 100%;transition:transform 1.5s cubic-bezier(.76,0,.2,1)}
+.gh::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,28,50,.35),rgba(14,28,50,.78))}
+.gtl{left:0;background-position:left center}
+.gtr{right:0;background-position:right center}
+.gh::before{content:"";position:absolute;top:0;bottom:0;width:2px;z-index:1;background:linear-gradient(180deg,#E2B456 0 24%,transparent 24% 76%,#E2B456 76%)}.gtl::before{right:0}.gtr::before{left:0}
+#gate.open .gtl{transform:translateX(-101%)}#gate.open .gtr{transform:translateX(101%)}
+.gate-in{position:relative;z-index:2;padding:24px;max-width:760px;transition:opacity .5s,transform .9s}
+#gate.open .gate-in{opacity:0;transform:scale(1.08)}
+.gate-top{font-size:15px;letter-spacing:.04em;color:#F0C877;margin-bottom:12px}
+.gate-title{font:400 clamp(72px,17vw,190px)/.95 var(--font-display);letter-spacing:.14em;margin-right:-.14em;text-shadow:0 4px 30px rgba(0,0,0,.45)}
+.gate-orn{height:10px;width:min(300px,70%);margin:18px auto 14px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='10'%3E%3Cpath d='M12 1l5 4-5 4-5-4z' fill='none' stroke='%23E2B456' stroke-width='1'/%3E%3Cpath d='M0 5h5M19 5h5' stroke='%23E2B456' stroke-width='1'/%3E%3C/svg%3E") repeat-x center}
+.gate-in p{margin:0 0 26px;font-size:clamp(15px,2vw,19px);color:#EDF1F6}
+#gateBtn{font-size:16px;padding:13px 28px;animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(226,180,86,.55)}50%{box-shadow:0 0 0 14px rgba(226,180,86,0)}}
+/* judul sampul muncul kata demi kata */
+.w{display:inline-block;overflow:hidden;vertical-align:bottom;padding-bottom:.1em;margin-bottom:-.1em}
+.w>span{display:inline-block;transform:translateY(110%)}
+body.opened .w>span{transform:none;transition:transform 1s cubic-bezier(.2,.8,.2,1) calc(var(--d) + 900ms)}
+.cover .in>*:not(h1){opacity:0;transform:translateY(16px)}
+body.opened .cover .in>*:not(h1){opacity:1;transform:none;transition:opacity .8s 1.6s,transform .8s 1.6s}
+/* transisi pindah halaman */
+.page.in .pbanner{animation:wipe 1s cubic-bezier(.7,0,.2,1) backwards}
+.page.in .pbanner h2{animation:rise .8s .4s cubic-bezier(.2,.8,.2,1) backwards}
+.page.in>section,.page.in>.sm-hero{animation:up .7s .25s cubic-bezier(.2,.8,.2,1) backwards}
+@keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes rise{from{opacity:0;transform:translateY(24px)}}
+@keyframes up{from{opacity:0;transform:translateY(22px)}}
+#prog{flex:none;height:3px;background:var(--line)}#prog i{display:block;height:100%;width:12.5%;background:linear-gradient(90deg,#E2B456,#B5832F);transition:width .6s cubic-bezier(.2,.8,.2,1)}
+#tabs button{transition:color .25s,transform .25s}#tabs button:active{transform:scale(.94)}
+.btn,.cbtn{transition:transform .2s,filter .2s,background .2s}.btn:hover,.cbtn:hover{transform:translateY(-2px)}
+@media(prefers-reduced-motion:reduce){.gh,.gate-in,.w>span,.cover .in>*{transition:none!important}#gateBtn{animation:none}.page.in *{animation:none!important}.w>span{transform:none}.cover .in>*:not(h1){opacity:1;transform:none}}
+@media(max-width:760px){.gh{width:50.3%}}
+
+/* ===== v9: pembuka lebih terang ===== */
+#gate{background:linear-gradient(180deg,#86B1D6 0%,#EBC9A0 100%)}
+.gh{background-color:#9DBAD2}
+.gh::after{background:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(20,35,59,.10) 50%,rgba(20,35,59,.42) 100%)}
+.gate-in::before{content:"";position:absolute;inset:-30px -60px;z-index:-1;background:radial-gradient(closest-side,rgba(12,26,46,.5),rgba(12,26,46,0));pointer-events:none}
+.gate-title{text-shadow:0 3px 24px rgba(10,22,40,.6)}
+.gate-top,.gate-in p{text-shadow:0 1px 10px rgba(10,22,40,.7)}
+.cover::after{background:linear-gradient(180deg,rgba(14,28,50,.02) 0%,rgba(14,28,50,.22) 55%,rgba(14,28,50,.80) 100%)}
+
+.hub{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.hub-card{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:22px;border:1px solid var(--line);border-radius:6px;background:rgba(255,255,255,.95);color:var(--ink);text-decoration:none;transition:transform .25s,box-shadow .25s,border-color .25s}
+.hub-card:hover{transform:translateY(-4px);border-color:var(--primary);box-shadow:0 10px 26px rgba(20,35,59,.16)}
+.hub-card b{font:400 26px var(--font-display)}.hub-card span:not(.ti){color:var(--muted);font-size:15px}
+.hub-card em{margin-top:auto;font-style:normal;font-weight:600;color:var(--primary);border-bottom:2px solid var(--accent);padding-bottom:2px}
+.dirdet{margin-top:16px;border:1px solid var(--line);border-radius:6px;background:rgba(255,255,255,.92);padding:0 18px 16px}
+.dirdet summary{cursor:pointer;font-weight:600;padding:16px 0;color:var(--primary)}
+@media(max-width:900px){.hub{grid-template-columns:1fr}}
+
+/* v13: satu navigasi saja (tab bawah), header ringkas */
+header.top .wrap{padding-block:7px}
+.emblem{width:38px;height:38px}.emblem svg{width:22px;height:22px}
+.brand b{font-size:20px}.brand span{margin-top:1px}
+.strip{font-size:12.5px}
+
+/* ===== v14: ramah HP ===== */
+.mob-only{display:none}
+@supports(height:100dvh){html,body{height:100dvh}}
+@media(max-width:760px){
+  .mob-only{display:inline-flex;width:100%;justify-content:center;order:-2}
+  .gis{display:flex;flex-direction:column;gap:12px;align-items:stretch}.gis>*{min-width:0}
+  .gis .mapbox{order:1}.gis .detail{order:2}
+  .gis>aside.panel:not(.detail){display:none;order:-1}
+  .gis.fopen>aside.panel:not(.detail){display:block}
+  #map{height:56dvh;min-height:330px}
+  .arrow{display:none!important}
+  .strip{display:none}
+  .wrap{padding-inline:16px}
+  #tabs{padding:4px 6px;gap:2px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+  #tabs button{padding:6px 11px;font-size:11.5px;scroll-snap-align:center}
+  #tabs button svg{width:22px;height:22px}
+  .gate-title{letter-spacing:.1em}
+  .cover{min-height:78dvh}
+  .cover h1{font-size:clamp(34px,10.5vw,48px)}
+  .cbtn,.btn{padding:11px 16px}
+  .sm-hero{min-height:62dvh}
+  .sm-pick{grid-template-columns:1fr}
+  .chap-card img{height:150px}
+  .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .hub-card{padding:18px}
+  .vid.vposter{margin-inline:16px;min-height:220px}
+  .pbanner{height:150px}
+}
+@media(max-width:380px){#tabs button{padding:6px 9px}}
+</style>
+</head>
+<body>
+
+<div id="gate" role="dialog" aria-modal="true" aria-label="Selamat datang di SIGAP">
+  <div class="gh gtl"></div><div class="gh gtr"></div>
+  <div class="gate-in">
+    <div class="gate-top">Desa Kedisan dan Desa Buahan, Kintamani, Bali</div>
+    <div class="gate-title" aria-label="SIGAP">SIGAP</div>
+    <div class="gate-orn"></div>
+    <p>Sistem Informasi Geospasial, Agraria, dan Pariwisata</p>
+    <button id="gateBtn" type="button" class="cbtn pri">Buka gerbang</button>
+  </div>
+</div>
+
+<div class="strip"><div class="wrap">
+  <span>Desa Kedisan dan Desa Buahan · Kecamatan Kintamani · Kabupaten Bangli · Provinsi Bali</span>
+  <span>Program Sambung Daya Desa · KKN-PPM UGM 2027</span>
+</div></div>
+
+<header class="top"><div class="wrap">
+  <a class="brand" href="#atas">
+    <span class="emblem" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#D9A23C" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M2 19l6-9 3 4 3-6 8 11z"/><path d="M4 22h16"/><circle cx="17.5" cy="5" r="1.6"/></svg></span>
+    <span><b>SIGAP</b><span>Sistem Informasi Geospasial, Agraria, dan Pariwisata</span></span>
+  </a>
+  
+</div></header>
+
+<main id="atas">
+<section class="cover" id="cover"><div class="in">
+<div class="eyebrow" style="color:var(--accent)">Kintamani, Bangli, Bali</div>
+<h1>Membaca lereng Batur dari Kedisan dan Buahan</h1>
+<p>SIGAP memetakan kerawanan longsor, curah hujan, lahan pertanian, peternakan, dan pariwisata di dua desa pada kaki kaldera Gunung Batur, bagian dari Batur UNESCO Global Geopark.</p>
+<button class="cbtn pri" data-go="1">Buka peta tematik</button><button class="cbtn" data-go="4">Baca StoryMap</button><a class="cbtn" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=drone+kintamani+danau+batur">Video Kintamani</a><button class="cbtn" id="snd">Putar suara Kintamani</button>
+</div></section>
+<div class="gal" id="gal"></div><div class="vid" id="vid"><b>Video</b><p style="margin:.3em 0;font-size:13.5px;color:var(--muted)">Isi <code>MEDIA.youtube</code> dengan ID video YouTube pilihanmu di bagian script, dan pemutarnya muncul di sini.</p></div>
+<section class="hero"><div class="wrap">
+  <div class="eyebrow">Proker SIGAP, Program Sambung Daya Desa</div>
+  <h1>Sistem informasi geospasial, agraria, dan pariwisata</h1>
+  <p class="lead">Peta tematik untuk membaca wilayah Desa Kedisan dan Desa Buahan: di mana lereng pernah bergerak, kapan hujan berat datang, lahan apa yang digarap, ke mana limbah ternak mengalir, dan wisata apa yang bisa dikunjungi. Dibuat untuk pemerintah desa, petani, dan peternak, lalu diserahterimakan kepada desa.</p>
+  <div class="facts" id="facts"></div>
+</div></section>
+
+<section class="blok beda" id="beda"><div class="wrap">
+  <div class="sec-head"><div class="eyebrow">Posisi SIGAP</div><h2>Satu peta untuk kebencanaan, agraria, dan pariwisata desa</h2>
+  <p>Direktori wisata, UMKM, dan penginapan untuk Kintamani sudah ada. SIGAP menautkannya, bukan menggandakannya, lalu menambah analisis geospasial yang belum tersedia untuk Kedisan dan Buahan.</p></div>
+  <div class="vs">
+    <div class="vs-col dim"><h3>Terhubung: Mentari Kintamani</h3>
+      <p>Direktori pariwisata, UMKM, dan penginapan Kintamani sudah dikelola Mentari Kintamani, saat ini untuk Songan B dan Batur Tengah. SIGAP tidak membuat ulang, tetapi menautkannya dan menambah Kedisan serta Buahan.</p>
+      <div class="actions"><a class="btn ghost" href="https://www.mentarikintamanibali.cloud/pariwisata" target="_blank" rel="noopener">Pariwisata</a><a class="btn ghost" href="https://www.mentarikintamanibali.cloud/umkm" target="_blank" rel="noopener">UMKM</a><a class="btn ghost" href="https://www.mentarikintamanibali.cloud/penginapan" target="_blank" rel="noopener">Penginapan</a></div></div>
+    <div class="vs-col main"><h3>SIGAP: peta tematik</h3>
+      <ul class="themes">
+        <li><span class="ti"><svg class="gl" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg></span><div><b>Rawan longsor</b><span>Titik kejadian terdokumentasi di dua desa, dengan rujukan zona resmi InaRISK dan TARUBALI. Lapisan poligon dari QGIS sedang dikerjakan.</span></div></li>
+        <li><span class="ti"><svg class="gl" viewBox="0 0 24 24"><path d="M7 15a4 4 0 0 1 .6-8 5 5 0 0 1 9.6 1.3A3.4 3.4 0 0 1 17 15z"/><path d="M8 19l-1 2M12 19l-1 2M16 19l-1 2"/></svg></span><div><b>Curah hujan</b><span>Prakiraan BMKG per desa, dibaca bersama lokasi lereng rawan.</span></div></li>
+        <li><span class="ti"><svg class="gl" viewBox="0 0 24 24"><path d="M12 21v-9"/><path d="M12 12c0-4-3-6-7-6 0 4 3 6 7 6z"/><path d="M12 14c0-3 2-5 6-5 0 3-2 5-6 5z"/></svg></span><div><b>Lahan pertanian</b><span>Tegalan dan kebun hortikultura, dibandingkan dengan batas administrasi resmi.</span></div></li>
+        <li><span class="ti"><svg class="gl" viewBox="0 0 24 24"><path d="M5 6c0 3 2 4 3 4h8c1 0 3-1 3-4"/><path d="M8 10v5a4 4 0 0 0 8 0v-5"/></svg></span><div><b>Peternakan dan limbah</b><span>Titik kandang dan fasilitas sampah terdekat, dasar menata dampak kotoran ternak.</span></div></li>
+      <li><span class="ti"><svg class="gl" viewBox="0 0 24 24"><path d="M3 20l6-10 4 6 3-4 5 8z"/></svg></span><div><b>Pariwisata</b><span>Dermaga, titik pandang, dan penginapan di tepi danau, terhubung ke katalog Mentari Kintamani.</span></div></li>
+        <li><span class="ti"><svg class="gl" viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg></span><div><b>Usaha warga</b><span>Warung, kuliner danau, dan jasa perahu yang hidup dari kunjungan wisata.</span></div></li>
+      </ul>
+      <div class="actions"><button class="btn" data-go="1">Buka peta tematik</button><button class="btn ghost" data-go="4">Baca StoryMap</button></div></div>
+  </div>
+</div></section>
+
+<section class="blok" id="peta" style="padding-top:18px"><div class="wrap">
+  <div class="gis" id="gis">
+    <button type="button" class="btn ghost mob-only" id="fbtn" aria-expanded="false">Cari lokasi dan atur lapisan</button>
+    <aside class="panel" aria-label="Pengaturan peta">
+      <div class="field"><label for="desaSel">Wilayah</label>
+        <select id="desaSel"><option value="all">Kedisan dan Buahan</option><option value="Kedisan">Desa Kedisan</option><option value="Buahan">Desa Buahan</option></select></div>
+      <div class="field"><label for="q">Cari lokasi atau usaha</label>
+        <input type="search" id="q" placeholder="Contoh: dermaga, villa, kopi" autocomplete="off">
+        <ul class="results" id="qres" aria-live="polite"></ul></div>
+      <h3>Lapisan peta</h3>
+      <div id="layers"></div>
+      <p class="note">Marker berbentuk berbeda untuk tiap kategori. Titik berstatus Perkiraan perlu dicek di lapangan.</p>
+    </aside>
+    <div class="mapbox">
+      <div id="map" role="application" aria-label="Peta interaktif Desa Kedisan dan Desa Buahan"></div>
+      <p class="note" id="mapnote"></p>
+    </div>
+    <aside class="panel detail" id="detail" aria-live="polite">
+      <h3 style="margin:0">Detail lokasi</h3>
+      <p class="note">Pilih titik di peta atau hasil pencarian untuk melihat keterangannya.</p>
+    </aside>
+  </div>
+  <div class="panel" style="margin-top:14px" id="unmapped"></div>
+</div></section>
+
+<section class="blok alt" id="bencana"><div class="wrap">
+  <div class="sec-head">
+    <div class="eyebrow">Kebencanaan</div>
+    <h2>Prakiraan cuaca dan lokasi rawan</h2>
+    <p>Cuaca ekstrem di lereng kaldera dapat memicu longsor dan pohon tumbang. Prakiraan di bawah diambil langsung dari BMKG untuk tiap desa.</p>
+  </div>
+  <div class="cards" id="wx"></div>
+  <div class="cards" style="margin-top:14px">
+    <div class="card">
+      <h3>Lokasi rawan yang sudah terdokumentasi</h3>
+      <ul class="list" id="bencanaList"></ul>
+      <p class="note">Tanda - berarti koordinat belum tersedia, sehingga lokasi belum digambar di peta.</p>
+    </div>
+    <div class="card">
+      <h3>Peta kerawanan resmi</h3>
+      <p>Poligon zona rawan longsor tingkat desa dikelola instansi lain. Rujuk sumber resmi berikut untuk data terbaru dan jangan menjadikan situs ini satu-satunya acuan evakuasi.</p>
+      <ul class="list">
+        <li><span>InaRISK, BNPB<small>Peta bahaya dan risiko bencana nasional</small></span><a class="r" href="https://inarisk.bnpb.go.id/" target="_blank" rel="noopener">Buka</a></li>
+        <li><span>TARUBALI, Peta Rawan Tanah Longsor<small>Tata ruang Provinsi Bali</small></span><a class="r" href="https://tarubali.baliprov.go.id/peta-rb-tanah-longsor" target="_blank" rel="noopener">Buka</a></li>
+        <li><span>Kajian Risiko Bencana Kabupaten Bangli<small>Dokumen KRB, 2024</small></span><a class="r" href="https://siapsiaga.or.id/wp-content/uploads/2024/07/Final-Report-KRB-Kab-Bangli.pdf" target="_blank" rel="noopener">Buka</a></li>
+        <li><span>BPBD Provinsi Bali<small>Laporan kejadian</small></span><a class="r" href="https://bpbd.baliprov.go.id/" target="_blank" rel="noopener">Buka</a></li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section class="blok" id="agraria"><div class="wrap">
+  <div class="sec-head">
+    <div class="eyebrow">Pertanian dan Peternakan</div>
+    <h2>Lahan, ternak, dan pengelolaan limbah</h2>
+    <p>Hortikultura (bawang, tomat, kubis, cabai) dan peternakan skala rumah tangga menjadi tulang punggung ekonomi desa. Data lahan dan limbah ternak menjadi dasar perencanaan desa.</p>
+  </div>
+  <div class="cards">
+    <div class="card"><h3>Lahan pertanian</h3>
+      <p>Penggunaan lahan Desa Kedisan menurut Profil Desa Kedisan (2013): tegalan atau pertanian kering <b class="num">497 ha</b> dan perkebunan <b class="num">25 ha</b>.</p>
+      <p class="note">Angka profil lama ini belum sama dengan luas batas administrasi BIG (<span id="luasK" class="num"></span> km²) dan perlu disinkronkan saat survei lahan.</p>
+      <div class="actions"><a class="btn ghost" href="https://bhumi.atrbpn.go.id/peta" target="_blank" rel="noopener">Bidang tanah di Bhumi ATR/BPN</a></div></div>
+    <div class="card"><h3>Peternakan</h3><ul class="list" id="ternakList"></ul></div>
+    <div class="card"><h3>Fasilitas sampah terdekat</h3><p>Belum ada TPS atau TPS 3R resmi yang tercatat di dalam batas kedua desa. Fasilitas berikut berada di luar desa.</p><ul class="list" id="sampahList"></ul>
+      <p class="note">Jarak garis lurus dari pusat desa. Titik penampungan sampah dan limbah kandang di dalam desa akan ditambahkan dari survei lapangan.</p></div>
+  </div>
+</div></section>
+
+<section class="blok story" id="storymap" style="padding-top:0"><div class="sm-hero" id="smHero"><div class="sm-hero-in wrap">
+  <div class="eyebrow">StoryMap SIGAP</div>
+  <h2>Cerita dua desa di kaki kaldera</h2>
+  <p>Ikuti perjalanan dari tepi Danau Batur sampai lereng yang pernah bergerak. Peta citra satelit berpindah mengikuti tiap bab, memakai data yang sama dengan peta tematik.</p>
+  <div class="sm-pick" id="smDesa" role="group" aria-label="Pilih desa">
+    <button type="button" data-d="kedisan" aria-pressed="true"><b>Mulai dari Kedisan</b><span>Dermaga, lereng, tegalan, dan ternak</span></button>
+    <button type="button" data-d="buahan" aria-pressed="false"><b>Mulai dari Buahan</b><span>Jalur Batur Tengah, penginapan, dan Bukit Abang</span></button>
+  </div>
+</div></div>
+<div class="wrap"><div class="sm"><div class="sm-map-wrap"><div class="sm-map" id="smap" role="application" aria-label="Peta cerita"></div><div class="sm-badge" id="smBadge"></div><div class="sm-leg" id="smLeg"></div></div><div class="sm-chaps" id="smChaps"></div></div>
+<div class="actions" id="smLinks"></div></div>
+</section>
+
+<section class="blok alt" id="direktori"><div class="wrap">
+  <div class="sec-head"><div class="eyebrow">Terhubung dengan Mentari Kintamani</div>
+    <h2>Katalog wisata, UMKM, dan penginapan ada di Mentari Kintamani</h2>
+    <p>Direktori itu sudah dibuat dan terus diperbarui oleh tim Mentari Kintamani. SIGAP tidak menggantinya. Kedua web saling menaut: katalog di sana, peta kebencanaan dan pertanian di sini.</p></div>
+  <div class="hub">
+    <a class="hub-card" href="https://www.mentarikintamanibali.cloud/pariwisata" target="_blank" rel="noopener"><span class="ti"><svg class="gl" viewBox="0 0 24 24"><path d="M3 20l6-10 4 6 3-4 5 8z"/></svg></span><b>Pariwisata</b><span>Destinasi dan titik pandang kawasan Kintamani.</span><em>Buka di Mentari Kintamani</em></a>
+    <a class="hub-card" href="https://www.mentarikintamanibali.cloud/umkm" target="_blank" rel="noopener"><span class="ti"><svg class="gl" viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg></span><b>UMKM</b><span>Usaha, kuliner, dan produk lokal beserta penjualnya.</span><em>Buka di Mentari Kintamani</em></a>
+    <a class="hub-card" href="https://www.mentarikintamanibali.cloud/penginapan" target="_blank" rel="noopener"><span class="ti"><svg class="gl" viewBox="0 0 24 24"><path d="M3 19V8M3 15h18v4M21 15v-3a3 3 0 0 0-3-3h-7v6"/><circle cx="7" cy="11.5" r="1.6"/></svg></span><b>Penginapan</b><span>Homestay, villa, dan glamping di lereng kaldera.</span><em>Buka di Mentari Kintamani</em></a>
+  </div>
+  <div class="card link-flow"><h3>Cara kedua web saling melengkapi</h3>
+    <ul class="list">
+      <li><span>Cakupan wilayah<small>Mentari Kintamani memuat Songan B dan Batur Tengah. SIGAP memuat Kedisan dan Buahan.</small></span><span class="r"><a href="https://www.mentarikintamanibali.cloud/desa/batur-tengah" target="_blank" rel="noopener">Batur Tengah</a> · <a href="https://www.mentarikintamanibali.cloud/desa/songan-b" target="_blank" rel="noopener">Songan B</a></span></li>
+      <li><span>Dari SIGAP ke Mentari<small>Detail tiap titik wisata, penginapan, dan usaha di peta punya tombol menuju katalog Mentari Kintamani.</small></span></li>
+      <li><span>Dari Mentari ke SIGAP<small>Usulan untuk tim Mentari: tambahkan tautan "Peta kebencanaan dan pertanian" ke SIGAP pada halaman desa.</small></span></li>
+    </ul></div>
+  <details class="dirdet"><summary>Titik Kedisan dan Buahan yang dipakai di peta SIGAP</summary>
+  <p class="note" style="margin:0 0 12px">Daftar ini hanya sumber titik untuk peta dan analisis lokasi. Tanda - berarti koordinat belum tersedia.</p>
+  <div class="tools">
+    <div class="chips" id="dirChips" role="group" aria-label="Kategori"></div>
+    <div class="field"><label for="dirDesa">Desa</label><select id="dirDesa"><option value="all">Semua desa</option><option>Kedisan</option><option>Buahan</option></select></div>
+    <div class="field"><label for="dirQ">Cari nama atau alamat</label><input type="search" id="dirQ" placeholder="Ketik untuk menyaring"></div>
+  </div>
+  <div class="tablewrap"><table><thead><tr><th>Nama</th><th>Desa</th><th>Jenis</th><th>Alamat dan kontak</th><th>Harga</th><th>Koordinat</th><th></th></tr></thead><tbody id="dirBody"></tbody></table></div>
+  <div class="actions"><button class="btn ghost" id="dlGeo" type="button">Unduh titik sebagai GeoJSON</button></div>
+  </details>
+</div></section>
+
+<section class="blok" id="desa"><div class="wrap">
+  <div class="sec-head"><div class="eyebrow">Pemerintah Desa</div><h2>Identitas dan kontak desa</h2></div>
+  <div class="cards" id="ident"></div>
+</div></section>
+
+<section class="blok" id="terkait"><div class="wrap"><div class="sec-head"><div class="eyebrow">Situs terkait</div><h2>Web resmi dan rujukan Kedisan dan Buahan</h2></div><div class="card"><ul class="list"><li><span>Situs Resmi Desa Kedisan<small>Profil, berita, dan layanan Pemerintah Desa Kedisan.</small></span><a class="r" href="https://www.kedisan.desa.id/" target="_blank" rel="noopener">Buka</a></li><li><span>Pemerintah Desa Buahan<small>Dari tim: pastikan ini Buahan Kintamani, bukan Buahan Tabanan.</small></span><a class="r" href="https://buahan-tabanan.desa.id/pemerintah" target="_blank" rel="noopener">Buka</a></li><li><span>Mentari Kintamani<small>Direktori wisata, UMKM, dan penginapan Kintamani.</small></span><a class="r" href="https://www.mentarikintamanibali.cloud" target="_blank" rel="noopener">Buka</a></li><li><span>Batur Village<small>Situs desa wisata kawasan Batur.</small></span><a class="r" href="https://www.baturvillage.com" target="_blank" rel="noopener">Buka</a></li><li><span>InaRISK BNPB<small>Peta bahaya dan risiko bencana nasional.</small></span><a class="r" href="https://inarisk.bnpb.go.id/" target="_blank" rel="noopener">Buka</a></li><li><span>TARUBALI<small>Tata ruang dan peta rawan longsor Provinsi Bali.</small></span><a class="r" href="https://tarubali.baliprov.go.id/" target="_blank" rel="noopener">Buka</a></li><li><span>MAGMA Indonesia (PVMBG)<small>Aktivitas Gunung Batur dan gerakan tanah.</small></span><a class="r" href="https://magma.esdm.go.id/" target="_blank" rel="noopener">Buka</a></li><li><span>BMKG<small>Cuaca, peringatan dini, gempa.</small></span><a class="r" href="https://www.bmkg.go.id/" target="_blank" rel="noopener">Buka</a></li><li><span>BPBD Provinsi Bali<small>Laporan kejadian bencana.</small></span><a class="r" href="https://bpbd.baliprov.go.id/" target="_blank" rel="noopener">Buka</a></li><li><span>BHUMI ATR/BPN<small>Bidang tanah dan LP2B.</small></span><a class="r" href="https://bhumi.atrbpn.go.id/peta" target="_blank" rel="noopener">Buka</a></li><li><span>Kedisan di Google Maps<small>Buka peta Google langsung.</small></span><a class="r" href="https://www.google.com/maps/search/Kedisan+Kintamani+Bangli" target="_blank" rel="noopener">Buka</a></li><li><span>Buahan di Google Maps<small>Buka peta Google langsung.</small></span><a class="r" href="https://www.google.com/maps/search/Buahan+Kintamani+Bangli" target="_blank" rel="noopener">Buka</a></li></ul></div></div></section>
+
+<section class="blok alt" id="sumber"><div class="wrap">
+  <div class="sec-head"><div class="eyebrow">Sumber data dan catatan</div><h2>Dari mana data ini berasal</h2></div>
+  <div class="cards">
+    <div class="card"><h3>Sumber</h3><ul class="src" style="margin:0;padding-left:18px;font-size:14.5px">
+      <li>Batas administrasi desa: Badan Informasi Geospasial (BIG), kode wilayah 51.06.04.2018 (Kedisan) dan 51.06.04.2019 (Buahan).</li>
+      <li>Titik wisata, penginapan, usaha, dan peternakan: Google Maps dan listing online, dikumpulkan tim KKN. Koordinat berasal dari Plus Code yang diterjemahkan ke lintang dan bujur.</li>
+      <li>Lokasi kejadian longsor: kedisan.desa.id, Kabar Bali, BPBD Provinsi Bali, dan Bali Post.</li>
+      <li>Prakiraan cuaca: BMKG (api.bmkg.go.id).</li>
+      <li>Titik informasi tata ruang: Bali Satu Data.</li>
+      <li>Peta dasar: Google Maps, Esri World Imagery, dan OpenStreetMap. Foto latar dan galeri: Wikimedia Commons (Lake Batur & Mount Abang 2013; Pura Ulun Danu Batur; citra NASA), lisensi sesuai halaman berkas masing-masing. Foto: Wikimedia Commons berdasarkan kedekatan lokasi, bisa tidak persis lokasi.</li><li>Koordinat tambahan: pencarian OpenStreetMap (Nominatim) saat halaman dibuka, berstatus Perkiraan.</li></ul></div>
+    <div class="card"><h3>Arti status koordinat</h3><ul class="list">
+      <li><span><span class="chip good">Plus Code</span></span><span>Diterjemahkan dari Plus Code Google Maps.</span></li>
+      <li><span><span class="chip good">Koordinat dokumen</span></span><span>Tercantum pada dokumen resmi.</span></li>
+      <li><span><span class="chip warn">Perkiraan</span></span><span>Perlu dicek di lapangan.</span></li>
+      <li><span><span class="chip">-</span></span><span>Hanya alamat, belum terpetakan.</span></li></ul></div>
+    <div class="card"><h3>Perbarui data</h3><p>Seluruh titik ada pada berkas <code>data.js</code>. Setelah survei, tambahkan atau ubah objek berikut koordinatnya, lalu unggah ulang berkas ke hosting. Identitas desa diubah pada bagian <code>CONFIG</code> di <code>index.html</code>.</p></div>
+  </div>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  <div><p><b>SIGAP Kedisan dan Buahan</b>, sistem informasi geospasial, agraria, dan pariwisata.</p><p>Program Sambung Daya Desa, Tim Rembaq Berkelana, KKN-PPM UGM Periode II 2027, Mentari Kintamani. Dikembangkan bersama pemerintah desa. Pengelolaan situs diserahterimakan kepada desa.</p></div>
+  <div><p>Data cuaca: <a href="https://data.bmkg.go.id/prakiraan-cuaca" target="_blank" rel="noopener">BMKG</a></p><p>Citra: Esri, Maxar, Earthstar Geographics. Peta: kontributor <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>.</p></div>
+</div></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+window.GL={
+mount:'<path d="M3 20l6-10 4 6 3-4 5 8z"/>',
+bed:'<path d="M3 19V8M3 15h18v4M21 15v-3a3 3 0 0 0-3-3h-7v6"/><circle cx="7" cy="11.5" r="1.6"/>',
+bag:'<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
+sprout:'<path d="M12 21v-9"/><path d="M12 12c0-4-3-6-7-6 0 4 3 6 7 6z"/><path d="M12 14c0-3 2-5 6-5 0 3-2 5-6 5z"/>',
+cow:'<path d="M5 6c0 3 2 4 3 4h8c1 0 3-1 3-4"/><path d="M8 10v5a4 4 0 0 0 8 0v-5"/>',
+alert:'<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>',
+hall:'<path d="M3 21h18M5 21V9l7-5 7 5v12M10 21v-6h4v6"/>',
+bin:'<path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13"/>',
+boat:'<path d="M3 17l2 3h14l2-3z"/><path d="M12 3v11M12 5l6 9h-6"/>',
+drop:'<path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/>',
+tent:'<path d="M3 20L12 4l9 16zM12 20v-6"/>',
+temple:'<path d="M4 21h16M6 21v-4h12v4M8 17v-4h8v4M10 13V9h4v4M12 9V4"/>',
+fork:'<path d="M7 3v8a2 2 0 0 0 4 0V3M9 3v18M17 3c-2 2-3 5-3 8h3v10"/>',
+pin:'<path d="M12 21s-6-5-6-10a6 6 0 0 1 12 0c0 5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/>',
+home:'<path d="M3 11l9-7 9 7M5 10v10h14V10"/>',
+map:'<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/>',
+story:'<path d="M3 5h7a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H3zM21 5h-7a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h7z"/>',
+list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.5M3 12h.5M3 18h.5"/>',
+book:'<path d="M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2zM5 18a2 2 0 0 1 2-2h12"/>'};
+window.MEN={wisata:"https://www.mentarikintamanibali.cloud/pariwisata",penginapan:"https://www.mentarikintamanibali.cloud/penginapan",umkm:"https://www.mentarikintamanibali.cloud/umkm"};
+window.G=k=>'<svg class="gl" viewBox="0 0 24 24" aria-hidden="true">'+(GL[k]||GL.pin)+'</svg>';
+</script>
+<script>
+window.SIGAP_DATA = {"desa":[{"id":"kedisan","nama":"Kedisan","kode":"51.06.04.2018","kecamatan":"Kintamani","kabupaten":"Bangli","provinsi":"Bali","luas_km2":3.21,"centroid":[-8.28431,115.372195],"geometry":{"type":"Polygon","coordinates":[[[115.379412,-8.274669],[115.379392,-8.274706],[115.379356,-8.274739],[115.379292,-8.274781],[115.379249,-8.27482],[115.379191,-8.274883],[115.379155,-8.274923],[115.379118,-8.274954],[115.379069,-8.27498],[115.379012,-8.275002],[115.379012,-8.275002],[115.378999,-8.275007],[115.378944,-8.275036],[115.378904,-8.275071],[115.378895,-8.275083],[115.378852,-8.275138],[115.378798,-8.275215],[115.378701,-8.275331],[115.378672,-8.275374],[115.378649,-8.275401],[115.378622,-8.275424],[115.378587,-8.275441],[115.378529,-8.275452],[115.378481,-8.27547],[115.37844,-8.275494],[115.378418,-8.275529],[115.378415,-8.275552],[115.37842,-8.275587],[115.378424,-8.275641],[115.37845,-8.275759],[115.378489,-8.275895],[115.378532,-8.276048],[115.378629,-8.2763],[115.378724,-8.276489],[115.37876,-8.276527],[115.378831,-8.276602],[115.378932,-8.276657],[115.379022,-8.276674],[115.379092,-8.276674],[115.379404,-8.276691],[115.379592,-8.276745],[115.379785,-8.276822],[115.379931,-8.276932],[115.379943,-8.276948],[115.380088,-8.277129],[115.380093,-8.277132],[115.380222,-8.277242],[115.380374,-8.277328],[115.380484,-8.277423],[115.380665,-8.277637],[115.380825,-8.277759],[115.380841,-8.277771],[115.381058,-8.277902],[115.381219,-8.277982],[115.38127,-8.278043],[115.381317,-8.278098],[115.381626,-8.27844],[115.381918,-8.278702],[115.381974,-8.278753],[115.382164,-8.278887],[115.382435,-8.279002],[115.382646,-8.279071],[115.382787,-8.279106],[115.382887,-8.27913],[115.383263,-8.2792],[115.383274,-8.279202],[115.383616,-8.279273],[115.384017,-8.27938],[115.384285,-8.279464],[115.384544,-8.279565],[115.384627,-8.279618],[115.384889,-8.279788],[115.385204,-8.28004],[115.385234,-8.280064],[115.385734,-8.28038],[115.386007,-8.280556],[115.386314,-8.280754],[115.386852,-8.281108],[115.386989,-8.281198],[115.387025,-8.281198],[115.387075,-8.281174],[115.387145,-8.280966],[115.387182,-8.280856],[115.387242,-8.280766],[115.38734,-8.280754],[115.38742,-8.280793],[115.387718,-8.280942],[115.387771,-8.28098],[115.38778,-8.281013],[115.387765,-8.281147],[115.387786,-8.281198],[115.387807,-8.281233],[115.387854,-8.281285],[115.38786,-8.281293],[115.387881,-8.281349],[115.387884,-8.281379],[115.387875,-8.281409],[115.387697,-8.281528],[115.387697,-8.281528],[115.387497,-8.281662],[115.387468,-8.281724],[115.387477,-8.281781],[115.3875,-8.281831],[115.38761,-8.281981],[115.387726,-8.28214],[115.387997,-8.282485],[115.388045,-8.282572],[115.388202,-8.283],[115.388234,-8.283066],[115.387827,-8.283437],[115.387861,-8.283509],[115.387669,-8.283607],[115.387468,-8.283748],[115.387417,-8.283685],[115.387198,-8.283859],[115.387172,-8.283833],[115.386943,-8.283995],[115.386384,-8.284499],[115.386081,-8.284232],[115.385813,-8.284025],[115.385624,-8.283882],[115.385242,-8.283525],[115.38481,-8.283982],[115.384625,-8.284192],[115.384575,-8.284314],[115.384496,-8.284424],[115.384425,-8.284489],[115.384343,-8.284535],[115.383982,-8.284681],[115.38344,-8.284981],[115.383193,-8.285235],[115.383065,-8.285406],[115.382969,-8.285584],[115.382908,-8.28572],[115.382869,-8.285909],[115.38284,-8.286023],[115.382812,-8.286095],[115.382776,-8.286134],[115.382737,-8.286138],[115.382719,-8.286138],[115.382358,-8.28587],[115.382244,-8.285773],[115.382212,-8.285773],[115.382187,-8.285795],[115.382162,-8.285827],[115.382101,-8.285838],[115.381998,-8.285823],[115.381941,-8.285784],[115.381752,-8.285602],[115.381602,-8.285463],[115.38148,-8.285352],[115.381409,-8.285352],[115.381284,-8.285352],[115.38108,-8.285352],[115.380938,-8.285367],[115.380806,-8.285395],[115.380649,-8.285409],[115.380477,-8.285409],[115.380349,-8.285402],[115.380288,-8.285374],[115.380106,-8.285302],[115.379992,-8.285202],[115.37986,-8.285131],[115.37976,-8.285106],[115.379635,-8.285092],[115.37951,-8.285092],[115.379396,-8.285085],[115.379264,-8.285024],[115.379132,-8.284963],[115.378893,-8.284845],[115.378803,-8.284785],[115.378711,-8.284756],[115.378614,-8.284721],[115.378439,-8.284646],[115.378254,-8.284571],[115.378172,-8.28451],[115.378097,-8.284456],[115.377972,-8.284342],[115.377932,-8.284292],[115.377858,-8.284239],[115.377808,-8.284185],[115.377675,-8.284096],[115.377554,-8.284039],[115.377404,-8.283989],[115.377265,-8.283989],[115.377069,-8.284032],[115.376933,-8.284046],[115.376862,-8.284046],[115.376762,-8.284017],[115.37664,-8.283953],[115.376523,-8.283889],[115.376455,-8.283818],[115.376366,-8.283768],[115.37634,-8.283739],[115.376319,-8.283726],[115.376171,-8.283645],[115.376099,-8.283613],[115.375954,-8.283522],[115.375818,-8.283464],[115.375673,-8.283397],[115.375522,-8.283335],[115.375284,-8.283224],[115.375116,-8.28323],[115.375001,-8.283317],[115.375001,-8.283252],[115.375,-8.283253],[115.374631,-8.283715],[115.374574,-8.283959],[115.374545,-8.284034],[115.374459,-8.284084],[115.374352,-8.284113],[115.374252,-8.28413],[115.374152,-8.28418],[115.374074,-8.284263],[115.37402,-8.284359],[115.373988,-8.284448],[115.37397,-8.284559],[115.373938,-8.284644],[115.37392,-8.284719],[115.373799,-8.284819],[115.373678,-8.284873],[115.373542,-8.284941],[115.373399,-8.285016],[115.373282,-8.285091],[115.373178,-8.285166],[115.373096,-8.285262],[115.373014,-8.28538],[115.372885,-8.285551],[115.372796,-8.285622],[115.372703,-8.285683],[115.372586,-8.28574],[115.372475,-8.28579],[115.372364,-8.285854],[115.372311,-8.285897],[115.372264,-8.285958],[115.372239,-8.286019],[115.372236,-8.286129],[115.372193,-8.286243],[115.372104,-8.286347],[115.372029,-8.286411],[115.371932,-8.286479],[115.371865,-8.286529],[115.371786,-8.286625],[115.37175,-8.286704],[115.371675,-8.286832],[115.371604,-8.286932],[115.37154,-8.287054],[115.371483,-8.287164],[115.371426,-8.287236],[115.371368,-8.287275],[115.371276,-8.287328],[115.371226,-8.287364],[115.371176,-8.2874],[115.371086,-8.287446],[115.37094,-8.28756],[115.370829,-8.28766],[115.370721,-8.287911],[115.370658,-8.288017],[115.370655,-8.288044],[115.370628,-8.288333],[115.370612,-8.28851],[115.370596,-8.288575],[115.370544,-8.288788],[115.370475,-8.288976],[115.370403,-8.289252],[115.370339,-8.289487],[115.370287,-8.289584],[115.370222,-8.289705],[115.37014,-8.289798],[115.370099,-8.289845],[115.370005,-8.289923],[115.369745,-8.290156],[115.369593,-8.290249],[115.369437,-8.290349],[115.369332,-8.290429],[115.369286,-8.290463],[115.369226,-8.290539],[115.369111,-8.290575],[115.36902,-8.290585],[115.368869,-8.290618],[115.36878,-8.290737],[115.36824,-8.291459],[115.368197,-8.292223],[115.368145,-8.29229],[115.367753,-8.292687],[115.367341,-8.292895],[115.367137,-8.29306],[115.36688,-8.293412],[115.366781,-8.293567],[115.366565,-8.293928],[115.3664,-8.294261],[115.366111,-8.294844],[115.366017,-8.294941],[115.365817,-8.295195],[115.365609,-8.295515],[115.365544,-8.295616],[115.365527,-8.295726],[115.365508,-8.295892],[115.365494,-8.296064],[115.365472,-8.296347],[115.365511,-8.296859],[115.365508,-8.296903],[115.365499,-8.297041],[115.365402,-8.29723],[115.365166,-8.297434],[115.364647,-8.297738],[115.3637,-8.298353],[115.363454,-8.298588],[115.363292,-8.298822],[115.362919,-8.29931],[115.3626,-8.299594],[115.362248,-8.299988],[115.362159,-8.29996],[115.358714,-8.299743],[115.358722,-8.299712],[115.358798,-8.299423],[115.358805,-8.299401],[115.358836,-8.299299],[115.358846,-8.299265],[115.358861,-8.299214],[115.358871,-8.299181],[115.358913,-8.299023],[115.358913,-8.299021],[115.35897,-8.298805],[115.358972,-8.298799],[115.35898,-8.298765],[115.358982,-8.298755],[115.35899,-8.29872],[115.359006,-8.298651],[115.35903,-8.298545],[115.359039,-8.298509],[115.359039,-8.298507],[115.359045,-8.298481],[115.359091,-8.298297],[115.359103,-8.298263],[115.359158,-8.2981],[115.359166,-8.298082],[115.359206,-8.297995],[115.35922,-8.297974],[115.359279,-8.297882],[115.359366,-8.297748],[115.359409,-8.297659],[115.359416,-8.297645],[115.359433,-8.29761],[115.359494,-8.297509],[115.359674,-8.29731],[115.359696,-8.297286],[115.359745,-8.297233],[115.359756,-8.297221],[115.359799,-8.297175],[115.359822,-8.297151],[115.359943,-8.297023],[115.360112,-8.296838],[115.36016,-8.296785],[115.360207,-8.296703],[115.360214,-8.296691],[115.360246,-8.296634],[115.360247,-8.296632],[115.360257,-8.296608],[115.360272,-8.296558],[115.360287,-8.296508],[115.360303,-8.296379],[115.3603,-8.296331],[115.360291,-8.296209],[115.360291,-8.296208],[115.360256,-8.29609],[115.36021,-8.295934],[115.3602,-8.2959],[115.360197,-8.295868],[115.36019,-8.295784],[115.360183,-8.295685],[115.360187,-8.295671],[115.360209,-8.295601],[115.360225,-8.295547],[115.36023,-8.295536],[115.360243,-8.295507],[115.360269,-8.295451],[115.360274,-8.29544],[115.360284,-8.29538],[115.360293,-8.295325],[115.360301,-8.295276],[115.360298,-8.295243],[115.36029,-8.295147],[115.360273,-8.29505],[115.360266,-8.295012],[115.360249,-8.294917],[115.36024,-8.294849],[115.360236,-8.29482],[115.360216,-8.294674],[115.360214,-8.294656],[115.360181,-8.294519],[115.360161,-8.294445],[115.360155,-8.294416],[115.360172,-8.294091],[115.360215,-8.293829],[115.360236,-8.293721],[115.360264,-8.293573],[115.360367,-8.293392],[115.360404,-8.293328],[115.360421,-8.293306],[115.36061,-8.293192],[115.36062,-8.293186],[115.360713,-8.293124],[115.360794,-8.293081],[115.361139,-8.292872],[115.36121,-8.292821],[115.361387,-8.292672],[115.361432,-8.292628],[115.361575,-8.292502],[115.361654,-8.292416],[115.361943,-8.29208],[115.361869,-8.291009],[115.362035,-8.290452],[115.362285,-8.289756],[115.362375,-8.289695],[115.362424,-8.289661],[115.362566,-8.289564],[115.362653,-8.28948],[115.362723,-8.289409],[115.362808,-8.289275],[115.362878,-8.289158],[115.362946,-8.289037],[115.363006,-8.288898],[115.363119,-8.288692],[115.363424,-8.288177],[115.363474,-8.288092],[115.3635,-8.288031],[115.363504,-8.287991],[115.363489,-8.287963],[115.363454,-8.287939],[115.363423,-8.287921],[115.363401,-8.287908],[115.363333,-8.287867],[115.363292,-8.28783],[115.363262,-8.287796],[115.363258,-8.287786],[115.363243,-8.287754],[115.363278,-8.287741],[115.363392,-8.287711],[115.363579,-8.287657],[115.363611,-8.287648],[115.363698,-8.287615],[115.36382,-8.287564],[115.363911,-8.287506],[115.363976,-8.287467],[115.364059,-8.287401],[115.364187,-8.287267],[115.364365,-8.287061],[115.364548,-8.286769],[115.36462,-8.286587],[115.364689,-8.286412],[115.364758,-8.286203],[115.364813,-8.285946],[115.364823,-8.285917],[115.365028,-8.28565],[115.365369,-8.285248],[115.36544,-8.285142],[115.365475,-8.285106],[115.365522,-8.285088],[115.365638,-8.284969],[115.36579,-8.284809],[115.365948,-8.284598],[115.366206,-8.284321],[115.366207,-8.283915],[115.366521,-8.282892],[115.366571,-8.282891],[115.366592,-8.282871],[115.366594,-8.282838],[115.366583,-8.282785],[115.366549,-8.282744],[115.366457,-8.282654],[115.366428,-8.282627],[115.36635,-8.282556],[115.366294,-8.282516],[115.366239,-8.282478],[115.366164,-8.282428],[115.366095,-8.282359],[115.365975,-8.282238],[115.365833,-8.282065],[115.365742,-8.281922],[115.365719,-8.281846],[115.365748,-8.281767],[115.365793,-8.281716],[115.36587,-8.281667],[115.365948,-8.28163],[115.366079,-8.281552],[115.366241,-8.281457],[115.366274,-8.28142],[115.366359,-8.281327],[115.366487,-8.281133],[115.366582,-8.281019],[115.366804,-8.280754],[115.366992,-8.280565],[115.367083,-8.280474],[115.367154,-8.280416],[115.367228,-8.280365],[115.367321,-8.280325],[115.367383,-8.280318],[115.367436,-8.280302],[115.367488,-8.280272],[115.367575,-8.280193],[115.367638,-8.280105],[115.367659,-8.280067],[115.36766,-8.280059],[115.367665,-8.280031],[115.367661,-8.279992],[115.367621,-8.279943],[115.367527,-8.279877],[115.367314,-8.279759],[115.367066,-8.279592],[115.367023,-8.279528],[115.36701,-8.27945],[115.367015,-8.279353],[115.367038,-8.279285],[115.367101,-8.279229],[115.367157,-8.279214],[115.367212,-8.279225],[115.367258,-8.279254],[115.367289,-8.279294],[115.367312,-8.279331],[115.367353,-8.27937],[115.36742,-8.279424],[115.367474,-8.279469],[115.367531,-8.279495],[115.367622,-8.279517],[115.367723,-8.279529],[115.367818,-8.279548],[115.367915,-8.279578],[115.368058,-8.279629],[115.36817,-8.279661],[115.368312,-8.279228],[115.368383,-8.278859],[115.368514,-8.27858],[115.36877,-8.278252],[115.36918,-8.27783],[115.369808,-8.277272],[115.369672,-8.277082],[115.369486,-8.276896],[115.369655,-8.276308],[115.371331,-8.274855],[115.371916,-8.274443],[115.373085,-8.273867],[115.37367,-8.273455],[115.374006,-8.272792],[115.375,-8.271984],[115.375001,-8.271983],[115.375307,-8.271764],[115.375361,-8.271798],[115.375398,-8.271817],[115.375429,-8.271837],[115.375444,-8.271852],[115.375453,-8.271865],[115.375479,-8.271904],[115.375537,-8.271996],[115.375564,-8.272039],[115.375622,-8.272109],[115.375667,-8.27215],[115.375719,-8.272203],[115.37574,-8.272224],[115.37575,-8.272244],[115.375762,-8.272266],[115.375771,-8.272291],[115.375792,-8.272343],[115.375825,-8.272395],[115.375863,-8.272434],[115.375896,-8.27246],[115.375932,-8.272474],[115.375959,-8.272474],[115.375995,-8.272468],[115.375998,-8.272467],[115.376043,-8.272464],[115.376075,-8.272467],[115.376119,-8.272477],[115.376188,-8.272498],[115.376226,-8.272506],[115.376262,-8.272504],[115.376371,-8.27248],[115.376445,-8.272464],[115.376488,-8.27245],[115.376567,-8.272417],[115.376616,-8.272398],[115.376651,-8.272392],[115.376683,-8.272391],[115.376741,-8.272403],[115.37676,-8.272411],[115.376784,-8.27243],[115.376798,-8.272446],[115.376805,-8.272459],[115.376837,-8.272615],[115.376842,-8.27264],[115.376852,-8.272676],[115.376864,-8.272712],[115.376899,-8.272788],[115.376909,-8.272811],[115.376933,-8.272885],[115.37694,-8.272929],[115.37694,-8.272973],[115.37694,-8.272975],[115.376947,-8.273015],[115.376979,-8.273093],[115.37701,-8.273143],[115.377043,-8.27318],[115.377112,-8.273234],[115.377161,-8.27327],[115.37719,-8.273302],[115.377205,-8.273327],[115.377212,-8.27334],[115.3773,-8.273484],[115.377325,-8.273517],[115.377405,-8.273552],[115.377537,-8.273581],[115.377554,-8.273584],[115.377555,-8.273585],[115.37762,-8.27359],[115.377661,-8.273593],[115.377696,-8.273603],[115.377726,-8.273617],[115.377757,-8.273628],[115.377778,-8.27363],[115.377801,-8.27362],[115.377826,-8.273606],[115.377847,-8.273596],[115.377864,-8.273592],[115.377879,-8.273592],[115.377895,-8.273597],[115.377907,-8.273608],[115.377927,-8.273634],[115.37794,-8.273669],[115.377953,-8.273705],[115.377973,-8.273728],[115.377984,-8.273741],[115.37808,-8.273819],[115.378186,-8.273856],[115.378318,-8.273895],[115.378337,-8.2739],[115.378338,-8.273937],[115.378337,-8.273959],[115.378325,-8.274008],[115.378314,-8.274045],[115.378296,-8.274108],[115.378288,-8.27413],[115.378304,-8.27414],[115.378305,-8.274141],[115.378377,-8.274187],[115.378402,-8.274193],[115.378448,-8.274198],[115.378583,-8.274191],[115.378671,-8.27418],[115.378741,-8.274158],[115.378813,-8.274118],[115.378879,-8.274067],[115.378915,-8.274053],[115.378949,-8.274049],[115.378981,-8.274061],[115.379026,-8.2741],[115.379065,-8.274149],[115.379124,-8.274208],[115.379162,-8.274229],[115.3792,-8.274249],[115.379205,-8.274251],[115.379227,-8.27426],[115.379251,-8.274281],[115.37929,-8.274345],[115.379333,-8.274408],[115.37934,-8.274427],[115.379337,-8.274448],[115.379319,-8.274503],[115.379267,-8.274589],[115.379251,-8.274605],[115.379348,-8.274648],[115.379412,-8.274669]]]}},{"id":"buahan","nama":"Buahan","kode":"51.06.04.2019","kecamatan":"Kintamani","kabupaten":"Bangli","provinsi":"Bali","luas_km2":4.17,"centroid":[-8.294032,115.375888],"geometry":{"type":"Polygon","coordinates":[[[115.398862,-8.286673],[115.398748,-8.287267],[115.398712,-8.287543],[115.398668,-8.287878],[115.398493,-8.288282],[115.398337,-8.288505],[115.397955,-8.288762],[115.397479,-8.288992],[115.396925,-8.28911],[115.396146,-8.289253],[115.395194,-8.289422],[115.394623,-8.289531],[115.394061,-8.289589],[115.393404,-8.289621],[115.392695,-8.289652],[115.391899,-8.289692],[115.391484,-8.289777],[115.391111,-8.289904],[115.390661,-8.290204],[115.3902,-8.290649],[115.389905,-8.291018],[115.389488,-8.291533],[115.389227,-8.29212],[115.389214,-8.29216],[115.389208,-8.292174],[115.389135,-8.292193],[115.389059,-8.292208],[115.388986,-8.292216],[115.388908,-8.292215],[115.388804,-8.292206],[115.388666,-8.292175],[115.388431,-8.292133],[115.388241,-8.292141],[115.388019,-8.292165],[115.387363,-8.292236],[115.386982,-8.292326],[115.386896,-8.292374],[115.386871,-8.292399],[115.386858,-8.292444],[115.38687,-8.292497],[115.386885,-8.292546],[115.386898,-8.292592],[115.386897,-8.292626],[115.386886,-8.292651],[115.386863,-8.292683],[115.386825,-8.29271],[115.386506,-8.292899],[115.38647,-8.292915],[115.386438,-8.292915],[115.386415,-8.292909],[115.386398,-8.292896],[115.386373,-8.292874],[115.386347,-8.292851],[115.38632,-8.292812],[115.386319,-8.292811],[115.385974,-8.292018],[115.385769,-8.291774],[115.385729,-8.291727],[115.38569,-8.291699],[115.385607,-8.291645],[115.385592,-8.291637],[115.385441,-8.291553],[115.385319,-8.291486],[115.385076,-8.291342],[115.384965,-8.291309],[115.384834,-8.291295],[115.384737,-8.291308],[115.384648,-8.291341],[115.384379,-8.291553],[115.384181,-8.291709],[115.384098,-8.291774],[115.384077,-8.291791],[115.383752,-8.292054],[115.383662,-8.292091],[115.383583,-8.292068],[115.383539,-8.292008],[115.383496,-8.291876],[115.383462,-8.291774],[115.38344,-8.291709],[115.383388,-8.291553],[115.383306,-8.291305],[115.383283,-8.291222],[115.383191,-8.291103],[115.383186,-8.291097],[115.382917,-8.290869],[115.38281,-8.290778],[115.382644,-8.290679],[115.382365,-8.290506],[115.381702,-8.29008],[115.381457,-8.289926],[115.38128,-8.289818],[115.38114,-8.289727],[115.381009,-8.28968],[115.380953,-8.289666],[115.38086,-8.289656],[115.38071,-8.289667],[115.380498,-8.289681],[115.380372,-8.289683],[115.380309,-8.289675],[115.38027,-8.289662],[115.380224,-8.289637],[115.380184,-8.289585],[115.380131,-8.289531],[115.380086,-8.289497],[115.380033,-8.289475],[115.379984,-8.289471],[115.379876,-8.28948],[115.379666,-8.289512],[115.379478,-8.289547],[115.379542,-8.289733],[115.379537,-8.289837],[115.379494,-8.290018],[115.379461,-8.290118],[115.379466,-8.290228],[115.379475,-8.29027],[115.379513,-8.290451],[115.379556,-8.29057],[115.379594,-8.290656],[115.379642,-8.29077],[115.37967,-8.290932],[115.379742,-8.29117],[115.379784,-8.29127],[115.379832,-8.291355],[115.379875,-8.291422],[115.379927,-8.29147],[115.380027,-8.291541],[115.380084,-8.291641],[115.380122,-8.291746],[115.380137,-8.291865],[115.380122,-8.29196],[115.380103,-8.292045],[115.380146,-8.292277],[115.38036,-8.292969],[115.380445,-8.293276],[115.380467,-8.293412],[115.379992,-8.293379],[115.379674,-8.29341],[115.379402,-8.293496],[115.379294,-8.293524],[115.379039,-8.29359],[115.378595,-8.293579],[115.378454,-8.293591],[115.378233,-8.293563],[115.378053,-8.293569],[115.377771,-8.293479],[115.377636,-8.293915],[115.377629,-8.294079],[115.377657,-8.294643],[115.377671,-8.294907],[115.377671,-8.295193],[115.377671,-8.295371],[115.377607,-8.295614],[115.377471,-8.296042],[115.37745,-8.296213],[115.37745,-8.296399],[115.377486,-8.296577],[115.377536,-8.29682],[115.377564,-8.297041],[115.377564,-8.297077],[115.377564,-8.297277],[115.377564,-8.297477],[115.377464,-8.297691],[115.377357,-8.297762],[115.377214,-8.297848],[115.377107,-8.297934],[115.377022,-8.298084],[115.376858,-8.298411],[115.376858,-8.298524],[115.376858,-8.298708],[115.376881,-8.298869],[115.376893,-8.299053],[115.376893,-8.299172],[115.376846,-8.299309],[115.376756,-8.299493],[115.376429,-8.299862],[115.3764,-8.300005],[115.376394,-8.30016],[115.376411,-8.300308],[115.376471,-8.300534],[115.376477,-8.300647],[115.376471,-8.300808],[115.376405,-8.301004],[115.376334,-8.301135],[115.376257,-8.301236],[115.376156,-8.301326],[115.376025,-8.301409],[115.375608,-8.301611],[115.375372,-8.301723],[115.375245,-8.301784],[115.375013,-8.301914],[115.375001,-8.301925],[115.374865,-8.302045],[115.374728,-8.302277],[115.37471,-8.302373],[115.37471,-8.302515],[115.374716,-8.30264],[115.374732,-8.302741],[115.374746,-8.302825],[115.374776,-8.303009],[115.374781,-8.303164],[115.374781,-8.303286],[115.374781,-8.30333],[115.374722,-8.303622],[115.37471,-8.303907],[115.374728,-8.304074],[115.374787,-8.304258],[115.374853,-8.304455],[115.374972,-8.304621],[115.375025,-8.304714],[115.375078,-8.304807],[115.375156,-8.304942],[115.375204,-8.305079],[115.375234,-8.305234],[115.375251,-8.305406],[115.375251,-8.305573],[115.375228,-8.305734],[115.375182,-8.305817],[115.375156,-8.305864],[115.375096,-8.305892],[115.374904,-8.305978],[115.374728,-8.30581],[115.374544,-8.305697],[115.3743,-8.305638],[115.374157,-8.305626],[115.374038,-8.305685],[115.373943,-8.305745],[115.373812,-8.305769],[115.373621,-8.305751],[115.373247,-8.305656],[115.372818,-8.305567],[115.37264,-8.305575],[115.372569,-8.305543],[115.372515,-8.305477],[115.372396,-8.305317],[115.372272,-8.30522],[115.372125,-8.305201],[115.372015,-8.305197],[115.371863,-8.305211],[115.371697,-8.305244],[115.371568,-8.305249],[115.371444,-8.305182],[115.371016,-8.305001],[115.370459,-8.304678],[115.370058,-8.30441],[115.369645,-8.304183],[115.369267,-8.303962],[115.369208,-8.303944],[115.369136,-8.303956],[115.369106,-8.304045],[115.369095,-8.30414],[115.369095,-8.304318],[115.369047,-8.304545],[115.368982,-8.304729],[115.368928,-8.304973],[115.368857,-8.305128],[115.36872,-8.305246],[115.368547,-8.3053],[115.368321,-8.305312],[115.368149,-8.305294],[115.367929,-8.30527],[115.367631,-8.305294],[115.36734,-8.305395],[115.367185,-8.305508],[115.36703,-8.305633],[115.366786,-8.3058],[115.366679,-8.305948],[115.36665,-8.306073],[115.366608,-8.30627],[115.366596,-8.306412],[115.366572,-8.306537],[115.366501,-8.30665],[115.36643,-8.306751],[115.366305,-8.306829],[115.366073,-8.306942],[115.365644,-8.307043],[115.36543,-8.307085],[115.365097,-8.307162],[115.364895,-8.307198],[115.36474,-8.307239],[115.364556,-8.307275],[115.364449,-8.307382],[115.364407,-8.307495],[115.364383,-8.307668],[115.364401,-8.3079],[115.364443,-8.308203],[115.364467,-8.308423],[115.364508,-8.308548],[115.364568,-8.308667],[115.36458,-8.308732],[115.364585,-8.308804],[115.364585,-8.308893],[115.364565,-8.308939],[115.364544,-8.308988],[115.364401,-8.309089],[115.364306,-8.309173],[115.364163,-8.309274],[115.36402,-8.309333],[115.363872,-8.309333],[115.363693,-8.309375],[115.36358,-8.309434],[115.363491,-8.309518],[115.36342,-8.309553],[115.363307,-8.309553],[115.363146,-8.309488],[115.362842,-8.309443],[115.362736,-8.309096],[115.362682,-8.309006],[115.362539,-8.308766],[115.362187,-8.308322],[115.362065,-8.308124],[115.36193,-8.307902],[115.36156,-8.307285],[115.361479,-8.307061],[115.361477,-8.307057],[115.361436,-8.306782],[115.361491,-8.306591],[115.361503,-8.306579],[115.36166,-8.306418],[115.36187,-8.306455],[115.362255,-8.306409],[115.362454,-8.306164],[115.362576,-8.305728],[115.362581,-8.305657],[115.362614,-8.305232],[115.362658,-8.30464],[115.362688,-8.304592],[115.362821,-8.304377],[115.362943,-8.304079],[115.362985,-8.303961],[115.363064,-8.303745],[115.363023,-8.303541],[115.36287,-8.303364],[115.362836,-8.303325],[115.362706,-8.303175],[115.362516,-8.302827],[115.36241,-8.302294],[115.362407,-8.301702],[115.362406,-8.301649],[115.362379,-8.300991],[115.362345,-8.30062],[115.362328,-8.300303],[115.362248,-8.299988],[115.3626,-8.299594],[115.362919,-8.29931],[115.363292,-8.298822],[115.363454,-8.298588],[115.3637,-8.298353],[115.364647,-8.297738],[115.365166,-8.297434],[115.365402,-8.29723],[115.365499,-8.297041],[115.365508,-8.296903],[115.365511,-8.296859],[115.365472,-8.296347],[115.365494,-8.296064],[115.365508,-8.295892],[115.365527,-8.295726],[115.365544,-8.295616],[115.365609,-8.295515],[115.365817,-8.295195],[115.366017,-8.294941],[115.366111,-8.294844],[115.3664,-8.294261],[115.366565,-8.293928],[115.366781,-8.293567],[115.36688,-8.293412],[115.367137,-8.29306],[115.367341,-8.292895],[115.367753,-8.292687],[115.368145,-8.29229],[115.368197,-8.292223],[115.36824,-8.291459],[115.36878,-8.290737],[115.368869,-8.290618],[115.36902,-8.290585],[115.369111,-8.290575],[115.369226,-8.290539],[115.369286,-8.290463],[115.369332,-8.290429],[115.369437,-8.290349],[115.369593,-8.290249],[115.369745,-8.290156],[115.370005,-8.289923],[115.370099,-8.289845],[115.37014,-8.289798],[115.370222,-8.289705],[115.370287,-8.289584],[115.370339,-8.289487],[115.370403,-8.289252],[115.370475,-8.288976],[115.370544,-8.288788],[115.370596,-8.288575],[115.370612,-8.28851],[115.370628,-8.288333],[115.370655,-8.288044],[115.370658,-8.288017],[115.370721,-8.287911],[115.370829,-8.28766],[115.37094,-8.28756],[115.371086,-8.287446],[115.371176,-8.2874],[115.371226,-8.287364],[115.371276,-8.287328],[115.371368,-8.287275],[115.371426,-8.287236],[115.371483,-8.287164],[115.37154,-8.287054],[115.371604,-8.286932],[115.371675,-8.286832],[115.37175,-8.286704],[115.371786,-8.286625],[115.371865,-8.286529],[115.371932,-8.286479],[115.372029,-8.286411],[115.372104,-8.286347],[115.372193,-8.286243],[115.372236,-8.286129],[115.372239,-8.286019],[115.372264,-8.285958],[115.372311,-8.285897],[115.372364,-8.285854],[115.372475,-8.28579],[115.372586,-8.28574],[115.372703,-8.285683],[115.372796,-8.285622],[115.372885,-8.285551],[115.373014,-8.28538],[115.373096,-8.285262],[115.373178,-8.285166],[115.373282,-8.285091],[115.373399,-8.285016],[115.373542,-8.284941],[115.373678,-8.284873],[115.373799,-8.284819],[115.37392,-8.284719],[115.373938,-8.284644],[115.37397,-8.284559],[115.373988,-8.284448],[115.37402,-8.284359],[115.374074,-8.284263],[115.374152,-8.28418],[115.374252,-8.28413],[115.374352,-8.284113],[115.374459,-8.284084],[115.374545,-8.284034],[115.374574,-8.283959],[115.374631,-8.283715],[115.375,-8.283253],[115.375001,-8.283252],[115.375001,-8.283317],[115.375116,-8.28323],[115.375284,-8.283224],[115.375522,-8.283335],[115.375673,-8.283397],[115.375818,-8.283464],[115.375954,-8.283522],[115.376099,-8.283613],[115.376171,-8.283645],[115.376319,-8.283726],[115.37634,-8.283739],[115.376366,-8.283768],[115.376455,-8.283818],[115.376523,-8.283889],[115.37664,-8.283953],[115.376762,-8.284017],[115.376862,-8.284046],[115.376933,-8.284046],[115.377069,-8.284032],[115.377265,-8.283989],[115.377404,-8.283989],[115.377554,-8.284039],[115.377675,-8.284096],[115.377808,-8.284185],[115.377858,-8.284239],[115.377932,-8.284292],[115.377972,-8.284342],[115.378097,-8.284456],[115.378172,-8.28451],[115.378254,-8.284571],[115.378439,-8.284646],[115.378614,-8.284721],[115.378711,-8.284756],[115.378803,-8.284785],[115.378893,-8.284845],[115.379132,-8.284963],[115.379264,-8.285024],[115.379396,-8.285085],[115.37951,-8.285092],[115.379635,-8.285092],[115.37976,-8.285106],[115.37986,-8.285131],[115.379992,-8.285202],[115.380106,-8.285302],[115.380288,-8.285374],[115.380349,-8.285402],[115.380477,-8.285409],[115.380649,-8.285409],[115.380806,-8.285395],[115.380938,-8.285367],[115.38108,-8.285352],[115.381284,-8.285352],[115.381409,-8.285352],[115.38148,-8.285352],[115.381602,-8.285463],[115.381752,-8.285602],[115.381941,-8.285784],[115.381998,-8.285823],[115.382101,-8.285838],[115.382162,-8.285827],[115.382187,-8.285795],[115.382212,-8.285773],[115.382244,-8.285773],[115.382358,-8.28587],[115.382719,-8.286138],[115.382737,-8.286138],[115.382776,-8.286134],[115.382812,-8.286095],[115.38284,-8.286023],[115.382869,-8.285909],[115.382908,-8.28572],[115.382969,-8.285584],[115.383065,-8.285406],[115.383193,-8.285235],[115.38344,-8.284981],[115.383982,-8.284681],[115.384343,-8.284535],[115.384425,-8.284489],[115.384496,-8.284424],[115.384575,-8.284314],[115.384625,-8.284192],[115.38481,-8.283982],[115.385242,-8.283525],[115.385624,-8.283882],[115.385813,-8.284025],[115.386081,-8.284232],[115.386384,-8.284499],[115.386943,-8.283995],[115.387172,-8.283833],[115.387198,-8.283859],[115.387417,-8.283685],[115.387468,-8.283748],[115.387669,-8.283607],[115.387861,-8.283509],[115.387827,-8.283437],[115.388234,-8.283066],[115.388357,-8.283321],[115.388571,-8.283571],[115.388827,-8.283809],[115.389398,-8.284246],[115.389591,-8.284454],[115.38996,-8.28485],[115.390445,-8.285311],[115.390617,-8.285495],[115.39109,-8.285849],[115.391147,-8.285887],[115.391427,-8.286072],[115.391858,-8.286367],[115.392265,-8.286554],[115.392807,-8.286718],[115.393363,-8.286881],[115.393976,-8.287012],[115.394249,-8.287027],[115.394573,-8.287033],[115.394841,-8.287069],[115.395266,-8.287146],[115.395986,-8.287259],[115.396278,-8.287277],[115.396417,-8.287274],[115.396513,-8.287229],[115.396649,-8.287069],[115.396733,-8.287024],[115.396804,-8.287018],[115.39717,-8.287036],[115.397316,-8.287003],[115.397417,-8.286956],[115.397524,-8.286819],[115.397616,-8.286718],[115.397711,-8.286673],[115.397857,-8.286641],[115.397988,-8.286641],[115.398318,-8.286676],[115.398654,-8.286685],[115.398818,-8.286676],[115.398862,-8.286673]]]}}],"points":[{"id":"w-spot-adhya","desa":"Buahan","kategori":"wisata","sub":"Titik pandang","nama":"Spot Adhya Buahan Kintamani","alamat":"Jl. Batur Tengah, Buahan, Kintamani, Bangli 80652","deskripsi":"Titik singgah alam untuk melihat Danau Batur dan Gunung Batur di jalur Buahan–Kintamani.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"P95Q+5QF","lat":-8.292063,"lng":115.389437,"akurasi":"Plus Code","dalam_batas":null,"jarak_batas_m":20},{"id":"w-dermaga-kedisan","desa":"Kedisan","kategori":"wisata","sub":"Dermaga dan wisata danau","nama":"Dermaga Kedisan","alamat":"Kedisan, Kintamani, Bangli 80652","deskripsi":"Titik penyeberangan perahu menuju Desa Trunyan dan spot foto Danau Batur dan Gunung Batur.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"P99P+R5X","lat":-8.280437,"lng":115.385437,"akurasi":"Plus Code","dalam_batas":"Kedisan"},{"id":"w-tirta-pancoran","desa":"Kedisan","kategori":"wisata","sub":"Wisata spiritual","nama":"Tirta Pancoran Solas","alamat":"Jl. Kedisan, Kedisan, Kintamani, Bangli 80652","deskripsi":"Tempat melukat (penyucian diri) dengan pancuran air hangat di tepi Danau Batur.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"P9FH+W96","lat":-8.275187,"lng":115.378437,"akurasi":"Plus Code","dalam_batas":"Kedisan"},{"id":"w-patung-kedisan","desa":"Kedisan","kategori":"wisata","sub":"Penanda kawasan","nama":"Patung Kedisan","alamat":"Jl. Kedisan No.88, Kedisan, Kintamani, Bangli 80652","deskripsi":"Patung penanda kawasan wisata dengan ornamen ukiran batu khas Bali.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"w-batur-aqua-ride","desa":"Kedisan","kategori":"wisata","sub":"Wisata air","nama":"Batur Aqua Ride (Jetski Danau Batur)","alamat":"Jl. Trunyan, Kedisan, Kintamani, Bangli 80652","deskripsi":"Wahana jetski dan aktivitas air di Danau Batur.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"w-zamofa","desa":"Kedisan","kategori":"wisata","sub":"Wisata petualangan","nama":"Zamofa Adventure","alamat":"Jl. Kedisan, Kedisan, Kintamani, Bangli 80652","deskripsi":"Camping, memancing, dan aktivitas luar ruang di tepi danau.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"p-buana-hill","desa":"Buahan","kategori":"penginapan","sub":"Vila","nama":"Buana Hill Villa","alamat":"Buahan, Kintamani, Bangli 80652","deskripsi":"Vila bernuansa pedesaan di tepi Danau Batur dengan kolam renang, sarapan, dan WiFi.","kontak":"+62 822-6156-0293","situs":"","harga":"Rp411.664 per malam","jam":"","sumber":"Perkiraan harga mulai dari listing online; dapat berubah","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"p-surya-camp","desa":"Buahan","kategori":"penginapan","sub":"Camp","nama":"Surya Camp Buahan","alamat":"Buahan, Kintamani, Bangli 80652","deskripsi":"Penginapan bergaya camp di tepi danau dengan pemandangan Danau Batur dan gunung, sarapan, dan WiFi.","kontak":"+62 823-4193-9747","situs":"http://www.suryacampbuahan.com/","harga":"Rp403.184 per malam","jam":"","sumber":"Perkiraan harga mulai dari listing online; dapat berubah","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"p-baruna","desa":"Buahan","kategori":"penginapan","sub":"Homestay","nama":"Baruna Lake Side View","alamat":"Buahan, Kintamani, Bangli 80361","deskripsi":"Penginapan bernuansa rumah tradisional Bali di tepi danau, dengan restoran, sarapan, dan WiFi.","kontak":"+62 813-2227-795","situs":"","harga":"Rp207.439 per malam","jam":"","sumber":"Perkiraan harga mulai dari listing online; dapat berubah","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"p-danu-kuning","desa":"Buahan","kategori":"penginapan","sub":"Vila","nama":"Danu Kuning Villa","alamat":"Jl. Trunyan, Buahan, Kintamani, Bangli 80652","deskripsi":"Vila dengan udara sejuk dan pemandangan sekitar danau dan pegunungan.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"p-starlake","desa":"Buahan","kategori":"penginapan","sub":"Glamping","nama":"Starlake Villa n Glamping","alamat":"Jl. Trunyan, Buahan, Kintamani, Bangli 80652","deskripsi":"Pilihan vila dan glamping dengan pemandangan dekat danau.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"p-pondok-buahan","desa":"Buahan","kategori":"penginapan","sub":"Pondok","nama":"Pondok Buahan","alamat":"Buahan, Kintamani, Bangli 80652","deskripsi":"Penginapan di Buahan.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"P97P+8R2","lat":-8.286688,"lng":115.387062,"akurasi":"Plus Code","dalam_batas":"Buahan"},{"id":"p-pondok-manoka","desa":"Buahan","kategori":"penginapan","sub":"Pondok","nama":"Pondok Manoka","alamat":"Buahan, Kintamani, Bangli 80652","deskripsi":"Penginapan lokal di Desa Buahan.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"p-pondok-pohucu","desa":"Buahan","kategori":"penginapan","sub":"Pondok","nama":"Pondok Pohucu","alamat":"Buahan, Kintamani, Bangli 80652","deskripsi":"Penginapan lokal di Desa Buahan.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"p-villa-kedisan","desa":"Kedisan","kategori":"penginapan","sub":"Vila","nama":"Villa Kedisan Lake View Kintamani","alamat":"Jl. Kedisan No.88, Kedisan, Kintamani, Bangli","deskripsi":"Vila dengan pemandangan danau, akses jalan baik dan dekat dermaga.","kontak":"","situs":"","harga":"Rp638.080 per malam","jam":"","sumber":"Perkiraan harga mulai dari listing online; dapat berubah","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"p-kyma","desa":"Kedisan","kategori":"penginapan","sub":"Hotel","nama":"Kyma Kintamani by Desa Kyma","alamat":"Jl. Kedisan No.88, Kedisan, Kintamani, Bangli","deskripsi":"Penginapan dengan kolam renang dan pemandangan danau.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"p-segara","desa":"Kedisan","kategori":"penginapan","sub":"Hotel","nama":"Segara Hotel & Restaurant","alamat":"Kedisan, Kintamani, Bangli","deskripsi":"Hotel dengan restoran, sarapan, WiFi, dan kolam renang.","kontak":"","situs":"","harga":"Rp431.184 per malam","jam":"","sumber":"Perkiraan harga mulai dari listing online; dapat berubah","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"p-kedisan-panorama","desa":"Kedisan","kategori":"penginapan","sub":"Vila","nama":"Kedisan Panorama","alamat":"Jl. Pura Taman, Banjar Subak Taman No.1, Kedisan, Kintamani, Bangli","deskripsi":"Penginapan dengan pemandangan Danau Batur dari dataran tinggi; akses jalan menanjak dan sempit.","kontak":"","situs":"","harga":"Rp1.146.400 per malam","jam":"","sumber":"Perkiraan harga mulai dari listing online; dapat berubah","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"p-cloud-hills","desa":"Kedisan","kategori":"penginapan","sub":"Glamping","nama":"Cloud Hills Glamping by Bukit Vista","alamat":"Jl. Windu Sara, Kedisan, Kintamani, Bangli","deskripsi":"Glamping ber-AC dengan pemandangan pegunungan.","kontak":"","situs":"","harga":"Rp294.784 per malam","jam":"","sumber":"Perkiraan harga mulai dari listing online; dapat berubah","plus":"P98J+6J5","lat":-8.284437,"lng":115.381562,"akurasi":"Plus Code","dalam_batas":"Kedisan"},{"id":"p-kubah-bali","desa":"Kedisan","kategori":"penginapan","sub":"Glamping","nama":"Kubah Bali Glamping","alamat":"Jl. Kedisan Gang Kuli No.96, Kedisan, Kintamani, Bangli","deskripsi":"Penginapan tenda bubble atau dome.","kontak":"","situs":"","harga":"Rp352.008 per malam","jam":"","sumber":"Perkiraan harga mulai dari listing online; dapat berubah","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"p-royal-vip","desa":"Kedisan","kategori":"penginapan","sub":"Glamping","nama":"Royal VIP Glamping Kintamani","alamat":"Jl. Kedisan, Kedisan, Kintamani, Bangli 80652","deskripsi":"Glamping dengan pemandangan danau dan gunung.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"u-shallots","desa":"Kedisan","kategori":"umkm","sub":"Kuliner","nama":"Shallots Warung Makan","alamat":"Br. Kenali, Jl. Windu Sara, Kedisan","deskripsi":"Warung makan lokal dan katering.","kontak":"","situs":"","harga":"","jam":"","sumber":"Koordinat perkiraan dari Google Maps; perlu verifikasi lapangan","plus":"","lat":-8.2825,"lng":115.3775,"akurasi":"Perkiraan","dalam_batas":"Kedisan"},{"id":"u-floating","desa":"Kedisan","kategori":"umkm","sub":"Kuliner","nama":"Floating Restaurant Kedisan","alamat":"Area Dermaga Kedisan, Jl. Trunyan","deskripsi":"Kuliner olahan ikan danau (mujair nyat-nyat).","kontak":"","situs":"","harga":"","jam":"","sumber":"Koordinat perkiraan dari Google Maps; perlu verifikasi lapangan","plus":"","lat":-8.2812,"lng":115.3873,"akurasi":"Perkiraan","dalam_batas":"Kedisan"},{"id":"u-kedisan-resto","desa":"Kedisan","kategori":"umkm","sub":"Kuliner","nama":"Kedisan Kintamani Restaurant","alamat":"Jl. Windu Sara, Kedisan","deskripsi":"Restoran dan kedai kopi lokal.","kontak":"","situs":"https://kedisankintamani.com/","harga":"","jam":"","sumber":"Koordinat perkiraan dari Google Maps; perlu verifikasi lapangan","plus":"","lat":-8.2831,"lng":115.3782,"akurasi":"Perkiraan","dalam_batas":"Kedisan"},{"id":"u-sentra-dermaga","desa":"Kedisan","kategori":"umkm","sub":"Sentra usaha","nama":"Sentra Pedagang dan Jasa Perahu Dermaga","alamat":"Tepi Danau Batur, Kedisan","deskripsi":"Sentra pedagang kecil, jasa perahu, dan cenderamata.","kontak":"","situs":"","harga":"","jam":"","sumber":"Koordinat perkiraan dari Google Maps; perlu verifikasi lapangan","plus":"","lat":-8.2804,"lng":115.3854,"akurasi":"Perkiraan","dalam_batas":"Kedisan"},{"id":"a-subur-sari","desa":"Kedisan","kategori":"pertanian","sub":"Titik acuan kawasan","nama":"Kawasan pertanian utara (sekitar Subur Sari Tani)","alamat":"Jalur utama pesisir danau, Kedisan","deskripsi":"Titik acuan kawasan hortikultura warga. Batas lahan belum dipoligonkan.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"P9CH+HRX","lat":-8.278563,"lng":115.379562,"akurasi":"Plus Code","dalam_batas":"Kedisan"},{"id":"a-bayu-merta","desa":"Kedisan","kategori":"pertanian","sub":"Titik acuan kawasan","nama":"Kawasan pertanian lereng selatan (Kios Pertanian Bayu Merta)","alamat":"Jl. Raya Penelokan–Kedisan","deskripsi":"Titik acuan tegalan dan perbukitan di selatan desa. Batas lahan belum dipoligonkan.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"P966+QVX","lat":-8.288063,"lng":115.362188,"akurasi":"Plus Code","dalam_batas":null,"jarak_batas_m":120},{"id":"a-binyan","desa":"Buahan","kategori":"pertanian","sub":"Titik acuan kawasan","nama":"Kawasan pertanian Binyan – Munduk Waru","alamat":"Jl. Binyan–Munduk Waru, Buahan","deskripsi":"Titik acuan kawasan pertanian di sepanjang jalur Binyan–Munduk Waru. Batas lahan belum dipoligonkan.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"P93C+J9R","lat":-8.295938,"lng":115.370937,"akurasi":"Plus Code","dalam_batas":"Buahan"},{"id":"a-tata-ruang","desa":"Buahan","kategori":"pertanian","sub":"Titik acuan kawasan","nama":"Titik informasi tata ruang Buahan (lereng timur)","alamat":"Buahan, Kintamani","deskripsi":"Titik acuan dalam data informasi tata ruang Bali Satu Data (2023).","kontak":"","situs":"","harga":"","jam":"","sumber":"Bali Satu Data","plus":"","lat":-8.287746,"lng":115.39383,"akurasi":"Koordinat dokumen","dalam_batas":"Buahan"},{"id":"t-dijaya","desa":"Buahan","kategori":"ternak","sub":"Peternakan","nama":"Dijaya Farm","alamat":"Jl. Banjar Tabih, Buahan","deskripsi":"Usaha peternakan di kawasan pertanian Banjar Tabih.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"M9RG+26X","lat":-8.309938,"lng":115.375563,"akurasi":"Plus Code","dalam_batas":null,"jarak_batas_m":450},{"id":"t-umah-celeng","desa":"Buahan","kategori":"ternak","sub":"Peternakan babi","nama":"Umah Celeng Buahan","alamat":"Jl. Trunyan, Buahan","deskripsi":"Peternakan babi rumahan.","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"t-edy-farm","desa":"Kedisan","kategori":"ternak","sub":"Farm house","nama":"Edy Farm House","alamat":"Jl. Kedisan, Kedisan, Kintamani","deskripsi":"Farm house di Kedisan (jenis usaha perlu dikonfirmasi).","kontak":"+62 858-5795-3676","situs":"","harga":"","jam":"24 jam","sumber":"Google Maps / listing online","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"b-danau","desa":"Kedisan","kategori":"bencana","sub":"Kenaikan muka air danau","nama":"Tepi Danau Batur dan Dermaga Kedisan","alamat":"Dermaga Kedisan","deskripsi":"Berpotensi terdampak kenaikan muka air atau luapan danau saat cuaca ekstrem.","kontak":"","situs":"","harga":"","jam":"","sumber":"Laporan media dan Google Maps","plus":"P99P+R5X","lat":-8.280437,"lng":115.385437,"akurasi":"Plus Code","dalam_batas":"Kedisan"},{"id":"b-bayad","desa":"Kedisan","kategori":"bencana","sub":"Tanah longsor","nama":"Longsor Banjar Bayad","alamat":"Br. Bayad, Kedisan","deskripsi":"Tanah longsor saat hujan deras pernah menutup akses warga (10 KK).","kontak":"","situs":"","harga":"","jam":"","sumber":"Kabar Bali, kedisan.desa.id (2019)","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"b-dalem-kahuripan","desa":"Kedisan","kategori":"bencana","sub":"Tanah longsor","nama":"Longsor area Pura Dalem Kahuripan","alamat":"Kedisan","deskripsi":"Longsor dan pohon tumbang saat hujan deras.","kontak":"","situs":"","harga":"","jam":"","sumber":"kedisan.desa.id (2019)","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"b-ruas-buahan","desa":"Kedisan","kategori":"bencana","sub":"Tanah longsor","nama":"Ruas jalan menuju Desa Buahan","alamat":"Jalur Kedisan–Buahan","deskripsi":"Rawan longsor dan pohon tumbang saat hujan deras.","kontak":"","situs":"","harga":"","jam":"","sumber":"kedisan.desa.id (2019)","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"b-bukit-abang","desa":"Buahan","kategori":"bencana","sub":"Tanah longsor","nama":"Longsor Bukit Abang","alamat":"Bukit Abang, Buahan","deskripsi":"Kejadian longsor di Bukit Abang (BPBD Bali 2019). Longsor kembali menimbun jalan pada Desember 2025 (Bali Post).","kontak":"","situs":"","harga":"","jam":"","sumber":"BPBD Provinsi Bali, Bali Post","plus":"","lat":null,"lng":null,"akurasi":"Belum ada koordinat","dalam_batas":null},{"id":"g-kantor-kedisan","desa":"Kedisan","kategori":"pemerintahan","sub":"Kantor desa","nama":"Kantor Perbekel Desa Kedisan","alamat":"Jl. Raya Kedisan, Kintamani, Bangli 80652","deskripsi":"Pusat pemerintahan desa.","kontak":"+62 812-3706-7011","situs":"","harga":"","jam":"Senin–Jumat 08.00–15.00","sumber":"Google Maps / listing online","plus":"P99J+XQ8","lat":-8.280062,"lng":115.381937,"akurasi":"Plus Code","dalam_batas":"Kedisan"},{"id":"s-tps3r-daup","desa":"Kedisan","kategori":"sampah","sub":"TPS 3R","nama":"TPS 3R Bumi Daup Lestari","alamat":"Daup, Kintamani, Bangli 80652","deskripsi":"Fasilitas pengelolaan sampah terdekat di Kecamatan Kintamani (di luar batas desa).","kontak":"","situs":"","harga":"","jam":"Senin–Minggu 08.00–16.00","sumber":"Google Maps / listing online","plus":"Q7JX+GVM","lat":-8.218687,"lng":115.299688,"akurasi":"Plus Code","dalam_batas":null,"jarak_km":10.8},{"id":"s-tpa-bangli","desa":"Kedisan","kategori":"sampah","sub":"TPA","nama":"TPA Bangli","alamat":"Kayubihi, Bangli","deskripsi":"Tempat pemrosesan akhir sampah Kabupaten Bangli (di luar batas desa).","kontak":"","situs":"","harga":"","jam":"","sumber":"Google Maps / listing online","plus":"J9W9+25W","lat":-8.354938,"lng":115.367937,"akurasi":"Plus Code","dalam_batas":null,"jarak_km":7.9}]};
+</script>
+<script>
+/* ===== Identitas desa: isi atau ubah di sini. Kolom kosong tidak ditampilkan. ===== */
+const CONFIG = {
+  kedisan: { perbekel:'', alamat:'Jl. Raya Kedisan, Kintamani, Bangli 80652', telepon:'+62 812-3706-7011', email:'kantordesakedisan@gmail.com', jam:'Senin sampai Jumat, 08.00 sampai 15.00', plus:'P99J+XQ8', situs:'https://www.kedisan.desa.id/', adm4:'51.06.04.2018' },
+  buahan:  { perbekel:'', alamat:'Buahan, Kintamani, Bangli 80652', telepon:'', email:'', jam:'', plus:'', situs:'', adm4:'51.06.04.2019' }
+};
+
+/* ===== Data dan kategori ===== */
+const D = window.SIGAP_DATA;
+const CAT = {
+  wisata:{label:'Wisata',color:'#1D6FB8',shape:'circle'},
+  penginapan:{label:'Penginapan',color:'#7B4BB5',shape:'diamond'},
+  umkm:{label:'UMKM',color:'#B86E00',shape:'triangle'},
+  pertanian:{label:'Pertanian',color:'#3C8A2E',shape:'square'},
+  ternak:{label:'Peternakan',color:'#8A5A36',shape:'square'},
+  bencana:{label:'Rawan bencana',color:'#C8371B',shape:'diamond'},
+  pemerintahan:{label:'Kantor desa',color:'#0C5A73',shape:'square'},
+  sampah:{label:'Fasilitas sampah',color:'#5B6B73',shape:'circle'}
+};
+const DEFAULT_ON = {wisata:1,penginapan:1,umkm:1,pertanian:1,ternak:1,bencana:1,pemerintahan:1,sampah:0};
+const P = D.points;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hasXY = p => p.lat != null && p.lng != null;
+const fmt = (n,d=0) => Number(n).toLocaleString('id-ID',{minimumFractionDigits:d,maximumFractionDigits:d});
+
+const ICON={'#1D6FB8':'mount','#7B4BB5':'bed','#B86E00':'bag','#3C8A2E':'sprout','#8A5A36':'cow','#C8371B':'alert','#0C5A73':'hall','#5B6B73':'bin'};
+function shapeSvg(shape,color,size,emoji){
+  const s=size||24;
+  return `<span class="pin" style="width:${s}px;height:${s}px;background:${color};font-size:${Math.round(s*.58)}px" aria-hidden="true"><i style="font-style:normal;display:block;transform:rotate(45deg)">${G(emoji||ICON[color]||'pin')}</i></span>`;
+}
+function accChip(p){
+  if (!hasXY(p)) return '<span class="chip">-</span>';
+  if (p.akurasi === 'Perkiraan') return '<span class="chip warn">Perkiraan</span>';
+  return `<span class="chip good">${esc(p.akurasi)}</span>`;
+}
+function boundaryNote(p){
+  if (!hasXY(p)) return '';
+  if (p.jarak_km != null) return `${fmt(p.jarak_km,1)} km dari pusat desa`;
+  if (p.jarak_batas_m != null) return `Titik berada kira-kira ${fmt(p.jarak_batas_m)} m di luar batas administrasi BIG`;
+  return '';
+}
+
+/* ===== Peta ===== */
+const map = L.map('map',{zoomControl:true,scrollWheelZoom:true});
+const gsat = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',{subdomains:'0123',maxZoom:20,attribution:'Citra &copy; Google'}).addTo(map);
+const gmap = L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{subdomains:'0123',maxZoom:20,attribution:'Peta &copy; Google'});
+const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Citra: Esri, Maxar, Earthstar Geographics'});
+const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; kontributor OpenStreetMap'});
+let gfail=0; gsat.on('tileerror',()=>{ if(++gfail===6 && map.hasLayer(gsat)){ map.removeLayer(gsat); sat.addTo(map); } });
+L.control.layers({'Google Satelit':gsat,'Google Peta':gmap,'Esri Satelit':sat,'OpenStreetMap':osm},null,{position:'topright'}).addTo(map);
+L.control.scale({imperial:false}).addTo(map);
+
+const COL = {Kedisan:'#27B3DA', Buahan:'#FFB020'};
+const boundary = L.featureGroup().addTo(map);
+D.desa.forEach(d=>{
+  const lyr = L.geoJSON({type:'Feature',geometry:d.geometry},{style:{color:COL[d.nama],weight:3,fillColor:COL[d.nama],fillOpacity:.07,dashArray:'8 5'}});
+  boundary.addLayer(lyr);
+  L.tooltip({permanent:true,direction:'center',className:'desa-label',interactive:false}).setLatLng(d.centroid).setContent(`Desa ${d.nama}`).addTo(map);
+});
+
+const state = {on:Object.assign({},DEFAULT_ON), desa:'all', sel:null};
+const groups = {}, markers = {};
+Object.keys(CAT).forEach(k=>{ groups[k] = L.layerGroup(); });
+
+function pinEmoji(p){const n=(p.nama+' '+(p.sub||'')).toLowerCase(); if(p.kategori==='wisata'){ if(/dermaga|perahu|jetski|aqua/.test(n))return 'boat'; if(/pancoran|melukat|tirta/.test(n))return 'drop'; if(/camp/.test(n))return 'tent'; if(/patung|pura/.test(n))return 'temple'; } if(p.kategori==='penginapan'&&/glamping|camp|kubah/.test(n))return 'tent'; if(p.kategori==='umkm'&&/resto|makan|warung|kopi/.test(n))return 'fork'; return null;}
+function mkIcon(p){
+  const c = CAT[p.kategori];
+  return L.divIcon({className:'pinwrap',html:shapeSvg(c.shape,c.color,34,pinEmoji(p)),iconSize:[34,34],iconAnchor:[17,17]});
+}
+function popHtml(p){
+  const c=CAT[p.kategori], q=encodeURIComponent(p.nama+' Kintamani Bali');
+  const gm=hasXY(p)?`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`:`https://www.google.com/maps/search/?api=1&query=${q}`;
+  const ln=(k,v)=>v?`<div style="font-size:12.5px;margin:2px 0"><b>${k}:</b> ${esc(v)}</div>`:'';
+  return `<div style="font-family:inherit"><div class="ph ph-${p.id}" style="min-height:24px;font-size:11px;color:#667">Memuat foto…</div>
+  <div style="font-size:11px;font-weight:600;color:${c.color};margin-top:6px">${c.label}${p.sub?' · '+esc(p.sub):''}</div>
+  <div style="font-size:15px;font-weight:700;margin:2px 0 4px">${esc(p.nama)}</div>
+  <div style="font-size:12.5px;margin-bottom:4px">${esc(p.deskripsi)}</div>
+  ${ln('Desa',p.desa)}${ln('Alamat',p.alamat)}${ln('Kontak',p.kontak)}${ln('Jam',p.jam)}${ln('Harga',p.harga)}
+  ${p.fb?'<div style="font-size:11.5px;color:#9A5B00">Posisi perkiraan di area desa atau ruas jalan; belum terverifikasi.</div>':''}${hasXY(p)?`<div style="font-size:11.5px;color:#556">${p.lat.toFixed(5)}, ${p.lng.toFixed(5)} · ${esc(p.akurasi||'')}</div>`:''}
+  <div style="margin-top:6px;font-size:12.5px"><a href="${gm}" target="_blank" rel="noopener">Google Maps</a> · <a href="https://www.google.com/search?tbm=isch&q=${q}" target="_blank" rel="noopener">Foto di Google</a>${p.situs?` · <a href="${esc(p.situs)}" target="_blank" rel="noopener">Situs</a>`:''}</div></div>`;
+}
+const photoCache={};
+async function loadPhoto(p){
+  const fill=h=>document.querySelectorAll('.ph-'+p.id).forEach(e=>e.innerHTML=h);
+  if(!hasXY(p)){ fill(''); return; }
+  if(photoCache[p.id]!==undefined){ fill(photoCache[p.id]); return; }
+  let html='';
+  for(const [r,near] of [[400,true],[2500,false]]){
+    try{
+      const u=`https://commons.wikimedia.org/w/api.php?action=query&generator=geosearch&ggscoord=${p.lat}|${p.lng}&ggsradius=${r}&ggsnamespace=6&ggslimit=1&prop=imageinfo&iiprop=url&iiurlwidth=520&format=json&origin=*`;
+      const j=await (await fetch(u)).json(); const pg=j.query&&Object.values(j.query.pages)[0];
+      if(pg&&pg.imageinfo){ const ii=pg.imageinfo[0];
+        html=`<a href="${esc(ii.descriptionurl)}" target="_blank" rel="noopener"><img src="${esc(ii.thumburl)}" alt="Foto ${esc(p.nama)}" style="width:100%;height:130px;object-fit:cover;border-radius:6px;display:block"></a><div style="font-size:10.5px;color:#667">${near?'Foto sekitar lokasi':'Foto kawasan sekitar'} · Wikimedia Commons</div>`; break; }
+    }catch(e){}
+  }
+  if(!html) html='<div style="font-size:11px;color:#667">Belum ada foto terbuka di lokasi ini. Pakai tautan Foto di Google.</div>';
+  photoCache[p.id]=html; fill(html);
+}
+function rebuildMarkers(){
+  Object.values(groups).forEach(g=>g.clearLayers());
+  P.filter(hasXY).forEach(p=>{
+    if (state.desa!=='all' && p.desa!==state.desa) return;
+    const m = L.marker([p.lat,p.lng],{icon:mkIcon(p),title:p.nama,keyboard:true,riseOnHover:true,opacity:p.akurasi==='Perkiraan'?.82:1});
+    m.bindTooltip(p.nama,{direction:'top',offset:[0,-12]});
+    m.bindPopup(()=>popHtml(p),{maxWidth:290,minWidth:240}); m.on('popupopen',()=>loadPhoto(p)); m.on('click',()=>showDetail(p,false));
+    markers[p.id]=m; groups[p.kategori].addLayer(m);
+  });
+  Object.keys(groups).forEach(k=>{ if(state.on[k]) groups[k].addTo(map); else map.removeLayer(groups[k]); });
+}
+function fitDesa(){
+  const b = L.latLngBounds([]);
+  D.desa.forEach(d=>{ if(state.desa==='all'||d.nama===state.desa) b.extend(L.geoJSON({type:'Feature',geometry:d.geometry}).getBounds()); });
+  map.fitBounds(b,{padding:[24,24]});
+}
+
+/* sidebar lapisan */
+function buildLayers(){
+  const box = document.getElementById('layers');
+  box.innerHTML = Object.keys(CAT).map(k=>{
+    const c=CAT[k], n=P.filter(p=>p.kategori===k&&hasXY(p)).length, tot=P.filter(p=>p.kategori===k).length;
+    return `<label class="layer">${'<input type="checkbox" data-k="'+k+'"'+(state.on[k]?' checked':'')+'>'}${shapeSvg(c.shape,c.color,22)}<span>${c.label}</span><span class="n num">${n}/${tot}</span></label>`;
+  }).join('');
+  box.querySelectorAll('input').forEach(i=>i.addEventListener('change',()=>{
+    const k=i.dataset.k; state.on[k]=i.checked?1:0;
+    if(i.checked){ groups[k].addTo(map); if(k==='sampah') fitAll(); } else map.removeLayer(groups[k]);
+  }));
+}
+function fitAll(){
+  const b = L.latLngBounds([]);
+  P.filter(p=>p.kategori==='sampah'&&hasXY(p)).forEach(p=>b.extend([p.lat,p.lng]));
+  D.desa.forEach(d=>b.extend(L.geoJSON({type:'Feature',geometry:d.geometry}).getBounds()));
+  map.fitBounds(b,{padding:[24,24]});
+}
+
+/* detail */
+function showDetail(p,fly){
+  state.sel=p.id;
+  const c=CAT[p.kategori];
+  const row=(k,v)=>v?`<dt>${k}</dt><dd>${v}</dd>`:'';
+  const gm = hasXY(p)?`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`:`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.nama+' '+p.alamat)}`;
+  const bn = boundaryNote(p);
+  document.getElementById('detail').innerHTML = `
+    <span class="chip">${shapeSvg(c.shape,c.color,16)} ${c.label}${p.sub?' · '+esc(p.sub):''}</span>
+    <h3>${esc(p.nama)}</h3>
+    <div class="ph ph-${p.id}" style="margin:6px 0"></div>
+    <p>${esc(p.deskripsi)}</p>
+    <dl class="kv">
+      ${row('Desa',esc(p.desa))}${row('Alamat',esc(p.alamat))}${row('Kontak',esc(p.kontak))}${row('Jam',esc(p.jam))}${row('Harga',esc(p.harga))}
+      ${row('Koordinat',hasXY(p)?`<span class="num">${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}</span>`:'-')}
+      ${row('Status',accChip(p))}${row('Sumber',esc(p.sumber))}
+      ${p.situs?row('Situs',`<a href="${esc(p.situs)}" target="_blank" rel="noopener">Kunjungi</a>`):''}
+    </dl>
+    ${bn?`<p class="note"><b>Catatan:</b> ${esc(bn)}. Verifikasi di lapangan.</p>`:''}
+    <div class="actions"><a class="btn" href="${gm}" target="_blank" rel="noopener">Buka di Google Maps</a>${MEN[p.kategori]?`<a class="btn ghost" href="${MEN[p.kategori]}" target="_blank" rel="noopener">Katalog di Mentari Kintamani</a>`:''}${hasXY(p)?`<button class="btn ghost" type="button" id="cpy">Salin koordinat</button>`:''}</div>`;
+  loadPhoto(p);
+  const cp=document.getElementById('cpy');
+  if(cp) cp.addEventListener('click',async()=>{ const t=`${p.lat}, ${p.lng}`; try{await navigator.clipboard.writeText(t); cp.textContent='Tersalin';}catch(e){ cp.textContent=t; } });
+  if(fly && hasXY(p)){
+    if(!state.on[p.kategori]){ state.on[p.kategori]=1; groups[p.kategori].addTo(map); buildLayers(); }
+    map.flyTo([p.lat,p.lng],Math.max(map.getZoom(),17),{duration:.8});
+    if(markers[p.id]) markers[p.id].openTooltip();
+    document.getElementById('map').scrollIntoView({block:'center',behavior:'smooth'});
+  }
+}
+
+/* pencarian peta */
+const q=document.getElementById('q'), qres=document.getElementById('qres');
+q.addEventListener('input',()=>{
+  const t=q.value.trim().toLowerCase();
+  if(t.length<2){ qres.innerHTML=''; return; }
+  const hit=P.filter(p=>(p.nama+' '+p.alamat+' '+p.sub).toLowerCase().includes(t)).slice(0,7);
+  qres.innerHTML = hit.length ? hit.map(p=>`<li><button type="button" data-id="${p.id}">${esc(p.nama)}<small>${CAT[p.kategori].label} · ${esc(p.desa)}</small></button></li>`).join('') : '<li class="note">Tidak ada hasil.</li>';
+  qres.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>showDetail(P.find(p=>p.id===b.dataset.id),true)));
+});
+document.getElementById('desaSel').addEventListener('change',e=>{ state.desa=e.target.value; rebuildMarkers(); fitDesa(); });
+
+/* objek tanpa koordinat */
+function renderUnmapped(){ const box=document.getElementById('unmapped'); if(box){box.innerHTML='';box.style.display='none';} }
+
+/* statistik hero */
+function renderFacts(){
+  const f=document.getElementById('facts');
+  const luas=D.desa.map(d=>`${fmt(d.luas_km2,2)}`);
+  const c=k=>P.filter(p=>p.kategori===k).length;
+  f.innerHTML=[
+    [fmt(D.desa.reduce((a,d)=>a+d.luas_km2,0),2)+' km²','Luas dua desa menurut batas BIG'],
+    [c('wisata'),'Objek wisata tercatat'],[c('penginapan'),'Penginapan tercatat'],[c('umkm'),'Usaha warga tercatat'],
+    [P.filter(hasXY).length+' dari '+P.length,'Objek sudah terpetakan']
+  ].map(x=>`<div class="fact"><b class="num">${x[0]}</b><span>${x[1]}</span></div>`).join('');
+  document.getElementById('luasK').textContent=fmt(D.desa.find(d=>d.nama==='Kedisan').luas_km2,2);
+}
+
+/* kebencanaan, peternakan, sampah */
+function renderLists(){
+  document.getElementById('bencanaList').innerHTML=P.filter(p=>p.kategori==='bencana').map(p=>`<li><span>${esc(p.nama)}<small>${esc(p.sub)} · Desa ${esc(p.desa)}<br>${esc(p.deskripsi)}</small></span><span class="r">${hasXY(p)?`<button class="linkbtn" type="button" data-id="${p.id}">Lihat di peta</button>`:'<span class="chip">-</span>'}</span></li>`).join('');
+  document.querySelectorAll('#bencanaList button').forEach(b=>b.addEventListener('click',()=>showDetail(P.find(p=>p.id===b.dataset.id),true)));
+  document.getElementById('ternakList').innerHTML=P.filter(p=>p.kategori==='ternak').map(p=>`<li><span>${esc(p.nama)}<small>Desa ${esc(p.desa)} · ${esc(p.sub)}</small></span><span class="r">${accChip(p)}</span></li>`).join('');
+  const hav=(a,b,c,d)=>{const R=6371,r=x=>x*Math.PI/180,dp=r(c-a),dl=r(d-b);const h=Math.sin(dp/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dl/2)**2;return 2*R*Math.asin(Math.sqrt(h));};
+  document.getElementById('sampahList').innerHTML=P.filter(p=>p.kategori==='sampah').map(p=>{
+    const j=D.desa.map(d=>`${d.nama} ${fmt(hav(d.centroid[0],d.centroid[1],p.lat,p.lng),1)} km`).join(', ');
+    return `<li><span>${esc(p.nama)}<small>${esc(p.alamat)}${p.jam?' · '+esc(p.jam):''}</small></span><span class="r num">${j}</span></li>`;}).join('');
+}
+
+/* direktori */
+const dir={cat:'semua'};
+const DIRCATS=['semua','wisata','penginapan','umkm','ternak','pertanian'];
+function renderDir(){
+  const chips=document.getElementById('dirChips');
+  chips.innerHTML=DIRCATS.map(k=>`<button type="button" data-k="${k}" aria-pressed="${dir.cat===k}">${k==='semua'?'Semua':CAT[k].label}</button>`).join('');
+  chips.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{dir.cat=b.dataset.k;renderDir();}));
+  const d=document.getElementById('dirDesa').value, t=document.getElementById('dirQ').value.trim().toLowerCase();
+  const rows=P.filter(p=>['wisata','penginapan','umkm','ternak','pertanian'].includes(p.kategori)).filter(p=>(dir.cat==='semua'||p.kategori===dir.cat)&&(d==='all'||p.desa===d)&&(!t||(p.nama+' '+p.alamat).toLowerCase().includes(t)));
+  document.getElementById('dirBody').innerHTML=rows.length?rows.map(p=>`<tr><td><b>${esc(p.nama)}</b><small>${CAT[p.kategori].label}</small></td><td>${esc(p.desa)}</td><td>${esc(p.sub)}</td><td>${esc(p.alamat)}${p.kontak?`<small>${esc(p.kontak)}</small>`:''}${p.situs?`<small><a href="${esc(p.situs)}" target="_blank" rel="noopener">Situs web</a></small>`:''}</td><td>${esc(p.harga)||'-'}${p.harga?'<small>Perkiraan</small>':''}</td><td>${accChip(p)}</td><td>${hasXY(p)?`<button class="linkbtn" type="button" data-id="${p.id}">Lihat di peta</button>`:''}</td></tr>`).join(''):'<tr><td colspan="7">Tidak ada data yang cocok.</td></tr>';
+  document.querySelectorAll('#dirBody button').forEach(b=>b.addEventListener('click',()=>showDetail(P.find(p=>p.id===b.dataset.id),true)));
+}
+document.getElementById('dirDesa').addEventListener('change',renderDir);
+document.getElementById('dirQ').addEventListener('input',renderDir);
+document.getElementById('dlGeo').addEventListener('click',()=>{
+  const gj={type:'FeatureCollection',features:P.filter(hasXY).map(p=>({type:'Feature',geometry:{type:'Point',coordinates:[p.lng,p.lat]},properties:Object.assign({},p,{lat:undefined,lng:undefined})}))};
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(gj)],{type:'application/geo+json'})); a.download='sigap-titik.geojson'; a.click();
+});
+
+/* identitas desa */
+function renderIdent(){
+  document.getElementById('ident').innerHTML=D.desa.map(d=>{
+    const c=CONFIG[d.id]||{};
+    const r=(k,v)=>v?`<dt>${k}</dt><dd>${v}</dd>`:'';
+    return `<div class="card ident"><h3>Pemerintah Desa ${esc(d.nama)}</h3>
+      <dl>${r('Kecamatan',esc(d.kecamatan))}${r('Kabupaten',esc(d.kabupaten)+', '+esc(d.provinsi))}${r('Kode wilayah',`<span class="num">${esc(d.kode)}</span>`)}${r('Luas (batas BIG)',`<span class="num">${fmt(d.luas_km2,2)} km²</span>`)}
+      ${r('Perbekel',esc(c.perbekel))}${r('Alamat kantor',esc(c.alamat))}${r('Telepon',esc(c.telepon))}${r('Email',esc(c.email))}${r('Jam layanan',esc(c.jam))}${r('Plus Code',esc(c.plus))}
+      ${c.situs?r('Situs',`<a href="${esc(c.situs)}" target="_blank" rel="noopener">${esc(c.situs.replace(/^https?:\/\//,''))}</a>`):''}</dl></div>`;
+  }).join('');
+}
+
+/* cuaca BMKG */
+function wxCard(d,body){return `<div class="card"><h3>Cuaca Desa ${esc(d.nama)}</h3>${body}</div>`;}
+async function loadWx(){
+  const box=document.getElementById('wx');
+  box.innerHTML=D.desa.map(d=>`<div class="card" id="wx-${d.id}"><h3>Cuaca Desa ${esc(d.nama)}</h3><p>Memuat prakiraan BMKG...</p></div>`).join('');
+  for(const d of D.desa){
+    const el=document.getElementById('wx-'+d.id), code=(CONFIG[d.id]||{}).adm4;
+    try{
+      const r=await fetch('https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4='+code);
+      if(!r.ok) throw new Error(r.status);
+      const j=await r.json();
+      const all=((j.data&&j.data[0]&&j.data[0].cuaca)||[]).flat();
+      if(!all.length) throw new Error('kosong');
+      const ts=e=>new Date((e.utc_datetime||e.local_datetime).replace(' ','T')+(e.utc_datetime?'Z':''));
+      const now=Date.now();
+      const cur=all.reduce((a,e)=>Math.abs(ts(e)-now)<Math.abs(ts(a)-now)?e:a,all[0]);
+      const byDay={};
+      all.forEach(e=>{const k=(e.local_datetime||'').slice(0,10);(byDay[k]=byDay[k]||[]).push(e);});
+      const days=Object.keys(byDay).slice(0,3).map(k=>{
+        const es=byDay[k], ts_=es.map(e=>+e.t), wx={};
+        es.forEach(e=>wx[e.weather_desc]=(wx[e.weather_desc]||0)+1);
+        const top=Object.entries(wx).sort((a,b)=>b[1]-a[1])[0][0];
+        const worst=es.some(e=>/lebat|petir/i.test(e.weather_desc||''));
+        const label=new Date(k+'T12:00:00').toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'});
+        return `<div class="wx-day"><b>${label}</b>${Math.min(...ts_)}–${Math.max(...ts_)} °C<br>${esc(top)}${worst?'<br><span class="chip bad">Waspada hujan lebat</span>':''}</div>`;
+      }).join('');
+      const alert=/lebat|petir/i.test(cur.weather_desc||'');
+      el.innerHTML=`<h3>Cuaca Desa ${esc(d.nama)}</h3><div class="wx-top">${cur.image?`<img src="${esc(cur.image)}" alt="" width="56" height="56">`:''}<div><div class="wx-temp num">${esc(cur.t)} °C</div><div>${esc(cur.weather_desc)} · kelembapan ${esc(cur.hu)}%</div></div></div>${alert?'<p style="margin-top:10px"><span class="chip bad">Cuaca ekstrem: waspadai longsor dan pohon tumbang</span></p>':''}<div class="wx-days">${days}</div><p class="note">Sumber: BMKG, prakiraan per desa (${esc(code)}). Cek <a href="https://www.bmkg.go.id/" target="_blank" rel="noopener">bmkg.go.id</a> untuk peringatan dini resmi.</p>`;
+    }catch(err){
+      el.innerHTML=`<h3>Cuaca Desa ${esc(d.nama)}</h3><p>Prakiraan BMKG belum bisa dimuat dari peramban ini.</p><div class="actions"><a class="btn ghost" href="https://www.bmkg.go.id/cuaca/prakiraan-cuaca" target="_blank" rel="noopener">Buka prakiraan di BMKG</a></div>`;
+    }
+  }
+}
+
+/* mulai */
+buildLayers(); rebuildMarkers(); fitDesa();
+renderFacts(); renderUnmapped(); renderLists(); renderDir(); renderIdent(); loadWx();
+(async function geocodeMissing(){
+  let cache={}; try{cache=JSON.parse(localStorage.getItem('sigapGeo')||'{}');}catch(e){}
+  let changed=false;
+  for(const p of P.filter(x=>!hasXY(x))){
+    let hit=cache[p.id];
+    if(!hit){
+      const core=p.nama.replace(/^Longsor( area)?\s*/i,'').replace(/\(.*?\)/g,'').trim();
+      const qs=[p.nama+', Kintamani, Bali', core+', '+p.desa+', Kintamani', core+' Bali', core+', '+(p.alamat||'')];
+      for(const q of qs){
+        try{
+          const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=id&viewbox=115.33,-8.25,115.43,-8.35&bounded=1&q='+encodeURIComponent(q));
+          const j=await r.json(); if(j[0]){hit=[+j[0].lat,+j[0].lon]; break;}
+        }catch(e){}
+        await new Promise(r=>setTimeout(r,1100));
+      }
+      if(hit) cache[p.id]=hit;
+    }
+    if(hit){ p.lat=hit[0]; p.lng=hit[1]; p.akurasi='Perkiraan'; p.sumber=(p.sumber||'')+' + pencarian OpenStreetMap'; changed=true; buildLayers(); rebuildMarkers(); renderUnmapped(); }
+  }
+  try{localStorage.setItem('sigapGeo',JSON.stringify(cache));}catch(e){}
+  const AN={Kedisan:[-8.28006,115.38194],Buahan:[-8.2896,115.3779]};
+  let k=0;
+  for(const p of P.filter(x=>!hasXY(x))){
+    const s=(p.nama+' '+p.alamat).toLowerCase(); let a=AN[p.desa]||AN.Kedisan;
+    if(/bukit abang/.test(s)) a=[-8.32083,115.39];
+    else if(/ruas jalan|jalur kedisan/.test(s)) a=[-8.285,115.380];
+    else if(/trunyan/.test(s)) a=p.desa==='Kedisan'?[-8.2815,115.3865]:[-8.2868,115.3871];
+    const ang=(k++)*2.4, r=.0003+.00012*(k%4);
+    p.lat=a[0]+r*Math.sin(ang); p.lng=a[1]+r*Math.cos(ang); p.akurasi='Perkiraan'; p.fb=1; p.sumber=(p.sumber||'')+' + penempatan perkiraan di area';
+  }
+  buildLayers(); rebuildMarkers(); renderUnmapped();
+})();
+const def=P.find(p=>p.id==='w-dermaga-kedisan'); if(def) showDetail(def,false);
+</script>
+
+<script>
+const MEDIA={youtube:'',fotos:["Lake_Batur_&_Mount_Abang_2013-11-10_(10849153196).jpg", "Pura_Ulun_Danu_Batur_200507-2.jpg", "Pura_Ulandanu_Temple,_Batur,_Bali,_Indonesia_01.JPG", "Bali_Mts_Agung_and_Batur.jpg"],caps:["Danau Batur dan Gunung Abang", "Pura Ulun Danu Batur", "Pura Ulun Danu Batur, Kintamani", "Gunung Agung dan Batur dari citra satelit NASA"]};
+const fp=n=>'https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(n)+'?width=1400';
+(function(){
+  const cov=document.getElementById('cover');
+  MEDIA.fotos.forEach((n,i)=>{const d=document.createElement('div');d.className='bg'+(i?'':' on');d.style.backgroundImage='url("'+fp(n)+'")';cov.prepend(d)});
+  const bgs=[...cov.querySelectorAll('.bg')].reverse(); let c=0; setInterval(()=>{bgs[c].classList.remove('on');c=(c+1)%bgs.length;bgs[c].classList.add('on')},6500);
+  document.getElementById('gal').innerHTML=MEDIA.fotos.map((n,i)=>`<figure><img loading="lazy" src="${fp(n)}" alt="${MEDIA.caps[i]}" onerror="this.parentNode.style.display='none'"><figcaption>${MEDIA.caps[i]} · Wikimedia Commons</figcaption></figure>`).join('');
+  if(MEDIA.youtube) document.getElementById('vid').innerHTML='<iframe src="https://www.youtube.com/embed/'+MEDIA.youtube+'" allowfullscreen></iframe>'; else {const v=document.getElementById('vid');v.className='vid vposter';v.style.backgroundImage='url("'+fp(MEDIA.fotos[0])+'")';v.innerHTML='<div class="vin"><h3>Kintamani dari udara</h3><p>Lanskap Danau Batur, Gunung Abang, dan lereng hortikultura di kaki kaldera.</p><a class="btn" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=drone+kintamani+danau+batur"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 4l13 8-13 8z"/></svg>Tonton video Kintamani</a></div>'}
+  // halaman
+  const main=document.getElementById('atas'); const S=id=>document.getElementById(id);
+  const groups=[['Beranda','home',[cov,S('gal'),S('vid'),main.querySelector('section.hero'),S('beda')]],['Peta','map',[S('peta')]],['Bencana','alert',[S('bencana')]],['Pertanian','sprout',[S('agraria')]],['StoryMap','story',[S('storymap')]],['Pariwisata','pin',[S('direktori')]],['Desa & Situs','hall',[S('desa'),S('terkait')]],['Sumber','book',[S('sumber'),document.querySelector('footer')]]];
+  const pages=[];
+  groups.forEach(([name,ic,els],i)=>{const pg=document.createElement('div');pg.className='page';pg.style.backgroundImage='linear-gradient(180deg,rgba(255,255,255,'+(i===1?.88:.76)+'),rgba(246,247,249,'+(i===1?.95:.93)+')),url("'+fp(MEDIA.fotos[[3,0,3,0,3,1,2,0][i]])+'")';
+    if(i>=2&&i<=6&&i!==4){const b=document.createElement('div');b.className='pbanner';b.style.backgroundImage='url("'+fp(MEDIA.fotos[i%4])+'")';b.innerHTML='<h2>'+G(ic)+name+'</h2>';pg.appendChild(b)}
+    els.forEach(e=>e&&pg.appendChild(e));main.appendChild(pg);pages.push(pg)});
+  const tabs=document.createElement('div');tabs.id='tabs';
+  tabs.innerHTML=groups.map((g,i)=>`<button data-go="${i}"><b>${G(g[1])}</b>${g[0]}</button>`).join('');
+  document.body.appendChild(tabs);
+  document.body.insertAdjacentHTML('beforeend','<button class="arrow" id="prev" aria-label="Sebelumnya">‹</button><button class="arrow" id="next" aria-label="Berikutnya">›</button>');
+  let cur=0; const go=i=>{i=Math.max(0,Math.min(pages.length-1,i));main.scrollTo({left:i*main.clientWidth,behavior:'smooth'})};
+  const mark=()=>{const i=Math.round(main.scrollLeft/main.clientWidth);if(i!==cur||1){cur=i;tabs.querySelectorAll('button').forEach((b,j)=>b.classList.toggle('on',j===i));if(i===1&&window.map&&0){} try{map.invalidateSize()}catch(e){}}};
+  main.addEventListener('scroll',()=>{clearTimeout(mark.t);mark.t=setTimeout(mark,80)});mark();
+  document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b){go(+b.dataset.go);return}
+    const a=e.target.closest('a[href^="#"]');if(a){const el=S(a.getAttribute('href').slice(1));const pg=el&&el.closest('.page');if(pg){e.preventDefault();go(pages.indexOf(pg));if(el.id!=='peta')setTimeout(()=>el.scrollIntoView({block:'start'}),500)}}});
+  S('prev').onclick=()=>go(cur-1);S('next').onclick=()=>go(cur+1);
+  document.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;if(e.key==='ArrowRight')go(cur+1);if(e.key==='ArrowLeft')go(cur-1)});
+  addEventListener('resize',()=>go(cur));
+  setTimeout(()=>{try{map.invalidateSize()}catch(e){}},300);
+  // suara: angin + gamelan sintetis
+  let ac,tm,src,on=0;const sb=S('snd');
+  sb.onclick=()=>{if(on){on=0;clearTimeout(tm);try{src.stop()}catch(e){}sb.textContent='Putar suara Kintamani';return}
+    on=1;sb.textContent='Matikan suara';ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume();
+    const buf=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate),d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    src=ac.createBufferSource();src.buffer=buf;src.loop=true;const f=ac.createBiquadFilter();f.type='bandpass';f.frequency.value=450;f.Q.value=.7;const g=ac.createGain();g.gain.value=.06;
+    const l=ac.createOscillator(),lg=ac.createGain();l.frequency.value=.12;lg.gain.value=220;l.connect(lg);lg.connect(f.frequency);l.start();
+    src.connect(f);f.connect(g);g.connect(ac.destination);src.start();
+    const sc=[293.66,329.63,392,440,523.25,587.33,659.25];
+    const bell=()=>{if(!on)return;const fr=sc[Math.floor(Math.random()*sc.length)];[1,2.76].forEach((m,k)=>{const o=ac.createOscillator(),gg=ac.createGain();o.type='sine';o.frequency.value=fr*m;const t=ac.currentTime;gg.gain.setValueAtTime(0,t);gg.gain.linearRampToValueAtTime(k?.03:.09,t+.01);gg.gain.exponentialRampToValueAtTime(.0001,t+(k?1.2:3.2));o.connect(gg);gg.connect(ac.destination);o.start(t);o.stop(t+3.3)});tm=setTimeout(bell,900+Math.random()*2200)};bell()};
+})();
+</script>
+
+<script>
+(function(){
+const D=window.SIGAP_DATA,P=D.points,DS=Object.fromEntries(D.desa.map(d=>[d.id,d]));
+const STORYMAPS={kedisan:'',buahan:''}; /* isi dengan tautan ArcGIS StoryMaps jika ada */
+const COL={wisata:'#3E8FD6',penginapan:'#9B6BD0',umkm:'#D88A1C',pertanian:'#5DAA48',ternak:'#B07A52',bencana:'#E0523A',pemerintahan:'#52B8AA',sampah:'#8A9AA3'};
+const KEY={wisata:'mount',penginapan:'bed',umkm:'bag',pertanian:'sprout',ternak:'cow',bencana:'alert',pemerintahan:'hall',sampah:'bin'};
+const LAB={wisata:'Wisata',penginapan:'Penginapan',umkm:'UMKM',pertanian:'Pertanian',ternak:'Peternakan',bencana:'Rawan bencana',pemerintahan:'Kantor desa',sampah:'Fasilitas sampah'};
+const NM={kedisan:'Kedisan',buahan:'Buahan'};
+const fm=(n,d=2)=>Number(n).toLocaleString('id-ID',{minimumFractionDigits:d,maximumFractionDigits:d});
+const q=(d,k)=>P.filter(p=>p.desa===NM[d]&&p.kategori===k);
+const noxy=(d,k)=>q(d,k).filter(p=>p.lat==null||p.lng==null).length;
+function chaps(d){
+  const c=DS[d].centroid, dm=P.find(p=>p.desa===NM[d]&&/dermaga/i.test(p.nama)&&p.lat!=null);
+  const base={
+   kedisan:[
+    {t:'Di tepi Danau Batur',x:[`Kedisan berada di Kecamatan Kintamani, Kabupaten Bangli, pada kaki kaldera Gunung Batur yang termasuk Batur UNESCO Global Geopark.`,`Batas administrasi dari BIG mencakup sekitar ${fm(DS[d].luas_km2)} km².`],c,z:14,cats:['pemerintahan']},
+    {t:'Dermaga, titik temu danau dan desa',x:[`Dermaga Kedisan menjadi simpul perahu dan wisata air. Wisata dan penginapan ditampilkan di peta SIGAP, sedangkan katalog lengkapnya ada di Mentari Kintamani.`],c:dm?[dm.lat,dm.lng]:c,z:15,cats:['wisata','penginapan']},
+    {t:'Lereng yang pernah bergerak',x:[`Tercatat ${q(d,'bencana').length} lokasi kejadian atau titik rawan di Kedisan, di antaranya Banjar Bayad, area Pura Dalem Kahuripan, dan ruas jalan menuju Buahan.`,`Titik presisinya akan dilengkapi bersama BPBD dan perangkat desa.`],c,z:14,cats:['bencana']},
+    {t:'Tegalan, kebun, dan musim hujan',x:[`Profil Desa Kedisan (2013) mencatat tegalan sekitar 497 ha dan perkebunan 25 ha, dengan bawang, tomat, kubis, dan cabai sebagai tanaman utama.`,`Angka ini belum sama dengan luas batas BIG dan akan disinkronkan lewat survei lahan. Prakiraan hujan BMKG di halaman Kebencanaan membantu membaca risiko lereng saat hujan lebat.`],c,z:14,cats:['pertanian']},
+    {t:'Ternak dan limbahnya',x:[`Peternakan rumah tangga menghasilkan limbah kandang yang belum terpetakan. Belum ada TPS atau TPS 3R resmi di dalam batas kedua desa.`,`Karena itu titik limbah ternak menjadi prioritas survei lapangan.`],c,z:14,cats:['ternak','sampah']}],
+   buahan:[
+    {t:'Buahan di jalur Batur Tengah',x:[`Buahan terhubung dengan Kedisan lewat ruas jalan yang juga tercatat rawan. Batas administrasinya sekitar ${fm(DS[d].luas_km2)} km².`,`Spot Adhya menjadi salah satu titik pandang ke Danau Batur di jalur Buahan sampai Kintamani.`],c,z:14,cats:['wisata']},
+    {t:'Penginapan di punggung kaldera',x:[`Buahan mencatat ${q(d,'penginapan').length} penginapan, jauh lebih banyak dari titik wisatanya.`,`Penginapan di lereng perlu tahu jalur dan titik kumpul saat hujan ekstrem, jadi datanya dibaca bersama peta kebencanaan.`],c,z:14,cats:['penginapan']},
+    {t:'Longsor Bukit Abang',x:[`Kejadian longsor Bukit Abang tercatat dari pemberitaan dan sumber BPBD Provinsi Bali.`,`Survei lapangan akan menggambar lokasinya agar bisa dibandingkan dengan lahan dan permukiman di sekitarnya.`],c,z:14,cats:['bencana']},
+    {t:'Lahan dan ternak',x:[`Buahan memiliki ${q(d,'pertanian').length} titik pertanian dan ${q(d,'ternak').length} titik peternakan yang sudah tercatat.`,`Profil lahan Buahan belum dimuat di web ini dan akan dilengkapi lewat survei.`],c,z:14,cats:['pertanian','ternak']}]
+  }[d];
+  base.push({t:'Langkah berikutnya',x:[`Survei bersama perangkat desa dan BPBD akan melengkapi koordinat, menambah titik limbah ternak, dan memeriksa lahan.`,`Setelah itu pengelolaan web diserahterimakan kepada pemerintah desa.`],c,z:13,cats:[]});
+  return base;
+}
+
+const map=L.map('smap',{zoomControl:false,scrollWheelZoom:false});
+L.control.zoom({position:'topright'}).addTo(map);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Citra Esri, Maxar, Earthstar Geographics'}).addTo(map);
+const polys=L.layerGroup().addTo(map), pts=L.layerGroup().addTo(map);
+let cur='kedisan',ch=[],io=null,act=0,first=true;
+const sm=u=>u.replace('width=1400','width=760');
+function drawPolys(){polys.clearLayers();D.desa.forEach(ds=>{const on=ds.id===cur;L.geoJSON({type:'Feature',geometry:ds.geometry},{style:{color:on?'#FFB45A':'#FFF4E2',weight:on?3.5:1.5,dashArray:on?null:'5 5',fillColor:'#FFB45A',fillOpacity:on?.12:0}}).addTo(polys)})}
+function show(i,instant){
+  act=i;const c=ch[i];
+  if(first||instant){map.setView(c.c,c.z,{animate:false});first=false}else map.flyTo(c.c,c.z,{duration:1.3});
+  pts.clearLayers();
+  c.cats.forEach(k=>P.filter(p=>p.desa===NM[cur]&&p.kategori===k&&p.lat!=null).forEach(p=>{
+    L.marker([p.lat,p.lng],{icon:L.divIcon({className:'pinwrap',html:`<span class="pin" style="width:34px;height:34px;background:${COL[k]}"><i style="transform:rotate(45deg)">${G(KEY[k])}</i></span>`,iconSize:[34,34],iconAnchor:[17,17]})}).bindTooltip(p.nama).addTo(pts)}));
+  document.getElementById('smLeg').innerHTML=c.cats.map(k=>`<span><i style="background:${COL[k]}"></i>${LAB[k]}</span>`).join('');
+  document.getElementById('smBadge').innerHTML=`<b>${i+1}/${ch.length}</b> ${c.t}`;
+  document.querySelectorAll('.chap').forEach((e,j)=>e.classList.toggle('on',j===i));
+}
+function build(){
+  ch=chaps(cur);drawPolys();first=true;
+  const box=document.getElementById('smChaps'),off=cur==='buahan'?2:0;
+  box.innerHTML=ch.map((c,i)=>{const n=(i+off)%MEDIA.fotos.length;return `<article class="chap" data-i="${i}"><div class="chap-card"><img loading="lazy" src="${sm(fp(MEDIA.fotos[n]))}" alt="${MEDIA.caps[n]}" onerror="this.remove()"><div class="chap-t"><div class="k">${NM[cur]}, bab ${i+1} dari ${ch.length}</div><h3>${c.t}</h3>${c.x.map(t=>`<p>${t}</p>`).join('')}${c.cats.length?'<div class="actions"><button class="btn ghost" data-go="1" type="button">Lihat di peta tematik</button></div>':''}<small class="cap">Foto: ${MEDIA.caps[n]}, Wikimedia Commons (lokasi terdekat)</small></div></div></article>`}).join('');
+  if(io)io.disconnect();
+  io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)show(+e.target.dataset.i)}),{root:box.closest('.page'),rootMargin:'-40% 0px -40% 0px'});
+  box.querySelectorAll('.chap').forEach(e=>io.observe(e));
+  show(0,true);
+  const u=STORYMAPS[cur];document.getElementById('smLinks').innerHTML=u?`<a class="btn ghost" href="${u}" target="_blank" rel="noopener">Buka versi ArcGIS StoryMaps</a>`:'';
+}
+document.getElementById('smHero').style.backgroundImage='url("'+fp(MEDIA.fotos[0])+'")';
+document.getElementById('smDesa').addEventListener('click',e=>{const b=e.target.closest('button[data-d]');if(!b)return;cur=b.dataset.d;document.querySelectorAll('#smDesa button').forEach(x=>x.setAttribute('aria-pressed',x===b));build();const pg=b.closest('.page'),t=document.querySelector('.sm');if(pg)pg.scrollTo({top:pg.scrollTop+t.getBoundingClientRect().top-pg.getBoundingClientRect().top-8,behavior:'smooth'})});
+build();
+const main=document.getElementById('atas');let tm;main.addEventListener('scroll',()=>{clearTimeout(tm);tm=setTimeout(()=>{map.invalidateSize();show(act,true)},180)});
+setTimeout(()=>{map.invalidateSize();show(act,true)},500);
+})();
+</script>
+
+<script>
+(function(){
+  const gate=document.getElementById('gate'),btn=document.getElementById('gateBtn'),main=document.getElementById('atas');
+  const img='url("'+fp(MEDIA.fotos[0]).replace('width=1400','width=1800')+'")';
+  gate.querySelectorAll('.gh').forEach(h=>h.style.backgroundImage=img);
+  const h1=document.querySelector('.cover h1');
+  if(h1){h1.setAttribute('aria-label',h1.textContent);h1.innerHTML=h1.textContent.split(' ').map((w,i)=>'<span class="w" aria-hidden="true" style="--d:'+i*110+'ms"><span>'+w+'</span></span>').join(' ')}
+  const tabs=document.getElementById('tabs'),n=tabs.querySelectorAll('button').length;
+  const prog=document.createElement('div');prog.id='prog';prog.innerHTML='<i></i>';tabs.before(prog);
+  const bar=prog.firstChild;bar.style.width=(100/n)+'%';
+  const pages=[...main.querySelectorAll('.page')];let last=-1,t;
+  function enter(){const i=Math.round(main.scrollLeft/main.clientWidth);bar.style.width=((i+1)*100/n)+'%';if(i===last)return;last=i;
+    pages.forEach(p=>p.classList.remove('in'));const pg=pages[i];if(pg&&i>0){void pg.offsetWidth;pg.classList.add('in');pg.scrollTop=0}}
+  main.addEventListener('scroll',()=>{clearTimeout(t);t=setTimeout(enter,90)});
+  function open(){gate.classList.add('open');document.body.classList.add('opened');btn.disabled=true;setTimeout(()=>{gate.remove();try{window.dispatchEvent(new Event('resize'))}catch(e){}},1700)}
+  btn.addEventListener('click',open);btn.focus();
+  document.addEventListener('keydown',e=>{if(gate.isConnected&&(e.key==='Enter'||e.key===' '||e.key==='Escape')){e.preventDefault();open()}});
+})();
+</script>
+
+<script>
+(function(){
+  const g=document.getElementById('gis'),b=document.getElementById('fbtn');
+  if(g&&b)b.addEventListener('click',()=>{const o=g.classList.toggle('fopen');b.setAttribute('aria-expanded',o);b.textContent=o?'Tutup pencarian dan lapisan':'Cari lokasi dan atur lapisan'});
+  const tabs=document.getElementById('tabs');
+  if(tabs)new MutationObserver(()=>{const on=tabs.querySelector('button.on');if(on)tabs.scrollTo({left:on.offsetLeft-(tabs.clientWidth-on.clientWidth)/2,behavior:'smooth'})}).observe(tabs,{attributes:true,subtree:true,attributeFilter:['class']});
+  const main=document.getElementById('atas');let ft,fitted=false;
+  function refit(){try{map.invalidateSize();fitDesa()}catch(e){}}
+  main.addEventListener('scroll',()=>{clearTimeout(ft);ft=setTimeout(()=>{if(Math.round(main.scrollLeft/main.clientWidth)===1){refit();fitted=true}},200)});
+  window.addEventListener('resize',()=>{clearTimeout(ft);ft=setTimeout(()=>{try{map.invalidateSize()}catch(e){}},250)});
+  window.addEventListener('orientationchange',()=>setTimeout(refit,400));
+  if(g)b.addEventListener('click',()=>setTimeout(()=>{try{map.invalidateSize()}catch(e){}},50));
+})();
+</script>
+</body>
+</html>
